@@ -5,266 +5,94 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>Recess</title>
-<meta name="description" content="AI エージェントが働いている間は Netflix を再生し、呼ばれたら止めてターミナルへ戻す、Mac 用の小さな常駐。">
+<meta name="description" content="AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Recess">
-<meta property="og:description" content="AI エージェントが働いている間は Netflix を再生し、呼ばれたら止めてターミナルへ戻す、Mac 用の小さな常駐。">
-<meta property="og:url" content="https://recess.feel-physics.jp/">
-<meta property="og:site_name" content="Recess">
-<meta name="twitter:card" content="summary">
+<meta property="og:description" content="AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls.">
+<meta property="og:image" content="https://tatsuro-ueda.github.io/recess/manga-en-1.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <style>
-  /* 色は :root のトークンで定義し、ダークモードで差し替える */
-  :root {
-    --bg: #fbfaf7;
-    --fg: #1f1d1a;
-    --muted: #6b665e;
-    --line: #dcd7cd;
-    --accent: #0f5c8c;
-    --code-bg: #f0ede6;
-    --code-fg: #1f1d1a;
-    --btn-bg: #1f1d1a;
-    --btn-fg: #fbfaf7;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #17161a;
-      --fg: #ece8e1;
-      --muted: #a39d93;
-      --line: #35333a;
-      --accent: #7dbbe6;
-      --code-bg: #232228;
-      --code-fg: #ece8e1;
-      --btn-bg: #ece8e1;
-      --btn-fg: #17161a;
-    }
-  }
-
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
-    font-size: 17px;
-    line-height: 1.8;
-    overflow-wrap: anywhere;
-  }
-  main, footer {
-    max-width: 40rem;
-    margin: 0 auto;
-    padding: 0 16px;
-  }
-  header { padding: 48px 0 8px; }
-  .brand {
-    margin: 0 0 12px;
-    font-size: 14px;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-  }
-  h1 {
-    margin: 0 0 20px;
-    font-size: 26px;
-    line-height: 1.45;
-    font-weight: 700;
-  }
-  h2 {
-    margin: 48px 0 12px;
-    padding-top: 24px;
-    border-top: 1px solid var(--line);
-    font-size: 19px;
-    line-height: 1.5;
-  }
-  h3 {
-    margin: 20px 0 4px;
-    font-size: 17px;
-  }
-  p { margin: 0 0 14px; }
-  .claim {
-    margin: 20px 0;
-    padding: 14px 16px;
-    border-left: 3px solid var(--accent);
-    background: var(--code-bg);
-  }
-  .claim p { margin: 0; }
-  .muted { color: var(--muted); font-size: 15px; }
-  ul, ol { margin: 0 0 14px; padding-left: 1.4em; }
-  li { margin: 0 0 8px; }
-  a { color: var(--accent); }
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.92em;
-    background: var(--code-bg);
-    color: var(--code-fg);
-    padding: 1px 5px;
-    border-radius: 4px;
-  }
-  pre {
-    margin: 0;
-    padding: 14px 16px;
-    background: var(--code-bg);
-    color: var(--code-fg);
-    border-radius: 8px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 14px;
-    line-height: 1.7;
-    white-space: pre-wrap;   /* 横スクロールを出さない */
-    word-break: break-all;
-    -webkit-user-select: all;
-    user-select: all;        /* タップで全体を選べる */
-  }
-  pre code { background: none; padding: 0; font-size: inherit; }
-  .cmd { position: relative; margin: 8px 0 14px; }
-  .copy {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 4px 10px;
-    font-size: 13px;
-    line-height: 1.4;
-    border: 0;
-    border-radius: 6px;
-    background: var(--btn-bg);
-    color: var(--btn-fg);
-    cursor: pointer;
-  }
-  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .cmd pre { padding-right: 84px; }
-  footer {
-    margin-top: 64px;
-    padding-top: 20px;
-    padding-bottom: 48px;
-    border-top: 1px solid var(--line);
-    font-size: 14px;
-    color: var(--muted);
-  }
-  footer p { margin: 0 0 6px; }
+  :root { --bg:#fbfaf7; --fg:#1f1d1a; --muted:#6b665e; --line:#dcd7cd; --accent:#0f5c8c; --code-bg:#f0ede6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#17161a; --fg:#ece8e1; --muted:#a39d93; --line:#35333a; --accent:#7dbbe6; --code-bg:#232228; } }
+  * { box-sizing: border-box; } html { -webkit-text-size-adjust: 100%; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif; font-size:17px; line-height:1.8; overflow-wrap:anywhere; }
+  main { max-width:40rem; margin:0 auto; padding:32px 16px 64px; }
+  h1 { font-size:1.9rem; line-height:1.3; margin:24px 0 8px; } h2 { font-size:1.25rem; margin:40px 0 8px; padding-top:8px; border-top:1px solid var(--line); }
+  h3 { font-size:1.05rem; margin:24px 0 4px; }
+  a { color:var(--accent); } code { background:var(--code-bg); padding:.1em .35em; border-radius:4px; font-size:.92em; }
+  pre { background:var(--code-bg); padding:12px 14px; border-radius:8px; overflow-x:auto; line-height:1.5; } pre code { background:none; padding:0; }
+  figure { margin:16px 0; } figure img { width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:6px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:.95em; } th, td { border:1px solid var(--line); padding:6px 8px; vertical-align:top; text-align:left; }
+  blockquote { margin:12px 0; padding:4px 14px; border-left:3px solid var(--line); color:var(--muted); }
+  hr { border:0; border-top:1px solid var(--line); margin:40px 0; }
+  footer { max-width:40rem; margin:0 auto; padding:0 16px 48px; color:var(--muted); font-size:.9em; }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <p class="brand">Recess</p>
-    <h1>AI が働いている間は Netflix。呼ばれたら止めて、ターミナルへ戻る。</h1>
-    <p>Recess は、AI エージェントが作業を進めている間は Safari で Netflix を再生し、AI から質問か完了の知らせが来たら再生を止めてターミナルを前に出す、Mac 用の小さな常駐です。herdr で AI エージェントを回している人向けです。</p>
-    <div class="claim">
-      <p>AI は道具だ。任せる範囲、呼ばれる時機、戻り方の3本の線を自分で引いたら、AI が夜の作業を進めている横で、Netflix をまったく見なかった私が Netflix を楽しんでいた。道具として使って楽しみが増えた。</p>
-    </div>
-    <p>私は AI を批判していない。積極的に使っている。それでも毎日、脳の疲れを感じる。AI を多数立てて回すのは、私はしたくない。このページは、その私が引いた線と、動いている実物の置き場です。コードは AI に書かせ、目的・権限・止め方は私が決めた。</p>
-  </header>
-
-  <h2>3本の線</h2>
-
-  <h3>線1 任せる範囲</h3>
-  <p>私が見ていない間も動く常駐に、鍵は渡さない。キー1回分の1行アプリ（Recess.app）にだけ、アクセシビリティの許可と、System Events を制御するオートメーションの許可を出した。python3 には出していない。「python3 に許可を与えるのはちょっと怖い」が理由で、Safari の設定も変えていない。ただし、herdr に登録した他のマシンの状態は、常駐が手元の ssh 鍵で読みに行く。いっぽうで AI 本体には、作業中はシェルを丸ごと渡している。</p>
-
-  <h3>線2 呼ばれる時機</h3>
-  <p>連れ出す側は慎重に、呼び戻す側は即時。Netflix へ連れ出すのは、見ているタブ（フォーカスしているペインと、同じタブに並ぶペイン）の AI が働いている（working）ときだけ。それも、どこにも質問と未読の完了が無く、そのタブに読み中のペインが無く、手を離して3秒たち、最前面がターミナルで、最後に呼び戻されてから20秒以上たっているとき。AI が止まっている（idle）ときは行かない。次を打つ準備の時間だから。以前の版は AI が止まっていても連れ出していて、呼び戻された直後に2〜3回 Netflix へ戻される原因になっていたので、そこは閉じた。ターミナルへ呼び戻すのは、どこかに新しく現れた質問と完了、それと、見ているタブの AI が working から idle になったとき。起動したときに既にあるものでは呼ばない。人の邪魔になりうる側だけ慎重にした。</p>
-
-  <h3>線3 戻り方</h3>
-  <p>スペース1回、0.3秒、ターミナル。呼ばれると Recess.app がスペースを1回送って再生を止め、0.3秒待ってターミナルを前に出す。切り替わったことは私の目で見た。呼び戻しは約8分に1回の細切れだったが、見なかった私が見た。</p>
-
-  <h2>入れる</h2>
-  <p>1行目で <code>install.sh</code> を手元に落とす。中身を読む。2行目で実行する。<code>install.sh</code> は実行時に常駐本体 <code>recess-watch.py</code> も同じ場所から取得するので、読んでから入れたい人は両方を読む（GitHub に同じものがある）。</p>
-  <div class="cmd">
-    <pre id="install-1"><code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh</code></pre>
-    <button type="button" class="copy" data-copy="install-1">コピー</button>
-  </div>
-  <div class="cmd">
-    <pre id="install-2"><code>sh install.sh</code></pre>
-    <button type="button" class="copy" data-copy="install-2">コピー</button>
-  </div>
-  <p class="muted">正本は GitHub です。同じファイル: <code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh</code></p>
-  <p class="muted">対象は macOS 14 以降と herdr 0.9.1 以降。私が確かめたのは macOS 14.3.1、herdr 0.9.1、Safari の Netflix です。</p>
-
-  <h2>入れると何が起きるか</h2>
-  <ol>
-    <li><strong>常駐が立つ。</strong>launchd の LaunchAgent として <code>~/.local/share/recess/recess-watch.py</code>（Python 3 の標準ライブラリだけ）が登録され、ログインのたびに起動する。2秒おきに <code>herdr agent list</code> を読み、状態の変化を見て、ブラウザかターミナルを <code>open -a</code> で前に出す。herdr に登録した他のマシンがあれば、そのマシンの状態も ssh で同じように読みに行く。</li>
-    <li><strong>Recess.app が作られる。</strong>中身は AppleScript 1行 <code>tell application "System Events" to key code 49</code>（スペースを1回送る）。手元で <code>osacompile</code> により作られ、<code>~/Applications</code> に置かれる。ビルド済みのものは落とさない。壊れていない Recess.app が既にあれば作り直さない（作り直すのは <code>sh install.sh --rebuild-app</code> のとき）。</li>
-    <li><strong>許可を2つ求める。</strong>1つは アクセシビリティ。「システム設定」の「プライバシーとセキュリティ」にある「アクセシビリティ」で、Recess.app を手で追加してオンにする。もう1つは オートメーション。初めてスペースが送られるとき「Recess が System Events を制御しようとしています」と聞かれるので「許可」を選ぶ。どちらも相手はこの1行アプリだけ。</li>
-    <li><strong>python3 には権限を出さない。</strong>常駐はキーを送らない。ブラウザとターミナルを前に出すだけで、それには権限が要らない。Safari の設定も変えない。</li>
-  </ol>
-
-  <h2>分かっている弱点</h2>
-  <ul>
-    <li>スペースは再生と停止の切り替えで、「再生しろ」「止まれ」という命令ではない。手で再生状態を変えると往復が逆になる。ターミナルにいる間は Netflix を止めておく、と私が運用で合わせている。</li>
-    <li>確かめたのは私の Mac の Safari と Netflix だけ。別のブラウザ、別のタブ、別のユーザーアカウント、OS 更新後は確かめていない。</li>
-    <li>Safari を前に出すだけなので、Netflix の正しいタブや動画へのフォーカスまでは保証しない。最初に一度、動画をクリックしてフォーカスを置く必要がある。</li>
-    <li>見ているタブの AI が working なら、手を離して考えごとをしている最中でも Netflix へ連れて行かれる。この穴はまだ直していない。</li>
-    <li>ターミナルでもブラウザでもないアプリ（Finder やエディタ）を見ているときに呼び戻されると、それでもブラウザを前に出してスペースを押す。</li>
-    <li>Recess.app を作り直す（<code>sh install.sh --rebuild-app</code>。壊れているか古い版のときは再実行でも作り直す）と、出した許可が外れることがある。外れたら、一覧から削除して追加し直す。それ以外のただの再実行では作り直さない。</li>
-    <li>再生が始まったかどうかを常駐は読めない。ログに残るのは「送った」記録だけで、切り替わりは目で確かめた。</li>
-    <li>応答しなくなった他のマシンは、最後に分かった状態を持ち続ける。いなくなった扱いにはしない。</li>
-    <li>手を離した秒数はこの Mac の入力装置から取る。スマホから ssh で打っていても「手」には数えない。</li>
-    <li>ssh が遅いと、他のマシンからの呼び出しは次の <code>herdr agent list</code> が返るまで遅れる。</li>
-    <li>herdr が無いと何もしない。Mac 以外では動かない。</li>
-    <li>測っていないこともある。生産性は測っていない。疲れが減ったかも測っていない。言えるのは、最初の一晩は線を引くのに消えて、線は翌日も残っていた、まで。</li>
-  </ul>
-
-  <h2>様子を見る</h2>
-  <p>常駐の判断は <code>~/.local/state/recess/watch.log</code> に残る。plist の <code>EnvironmentVariables</code> に <code>RECESS_DRY_RUN=1</code> を書いて載せ直すと、判断はログに書くが何も押さず何も切り替えない。私は最初の1日をこれでログだけ読むのを勧める。launchd から起動できないときは同じフォルダの <code>watch.stderr.log</code> を見る。</p>
-
-  <h2>止める、動かす、消す</h2>
-  <p>止める（常駐だけを降ろす。次にログインするまで止まったまま）:</p>
-  <div class="cmd">
-    <pre id="stop"><code>launchctl bootout gui/$(id -u)/jp.feel-physics.recess</code></pre>
-    <button type="button" class="copy" data-copy="stop">コピー</button>
-  </div>
-  <p>動かす:</p>
-  <div class="cmd">
-    <pre id="start"><code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.plist</code></pre>
-    <button type="button" class="copy" data-copy="start">コピー</button>
-  </div>
-  <p>消す（<code>install.sh</code> が置いたものを全部外す。同じリポジトリの <code>uninstall.sh</code> を落として実行する。ログも消すなら <code>--purge</code>）:</p>
-  <div class="cmd">
-    <pre id="remove"><code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/uninstall.sh
-sh uninstall.sh</code></pre>
-    <button type="button" class="copy" data-copy="remove">コピー</button>
-  </div>
-  <p>手で消すなら、置いたものはこれで全部:</p>
-  <div class="cmd">
-    <pre id="remove-manual"><code>launchctl bootout gui/$(id -u)/jp.feel-physics.recess
-rm ~/Library/LaunchAgents/jp.feel-physics.recess.plist
-rm -r ~/Applications/Recess.app ~/.local/share/recess ~/.local/state/recess
-rm ~/.local/bin/afplay   # --with-afplay で入れたときだけ</code></pre>
-    <button type="button" class="copy" data-copy="remove-manual">コピー</button>
-  </div>
-  <p class="muted">アクセシビリティとオートメーションの一覧に残る Recess の項目は、システム設定から手で外す。</p>
-
-  <h2>ソース</h2>
-  <p><a href="https://github.com/tatsuro-ueda/recess">github.com/tatsuro-ueda/recess</a></p>
-  <p>このコードは AI に書かせ、目的・権限・止め方は作者が決めた。</p>
+<h1 id="recess">Recess</h1>
+<p>AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls.</p>
+<p>English first, 日本語は後半（<a href="#recess-日本語">日本語へ</a>）.</p>
+<figure><img src="manga-en-1.jpg" alt="Recess, page 1 of 2. AI agents are useful, but why do they leave me so strangely exhausted? Brain Fry." loading="lazy"></figure>
+<figure><img src="manga-en-2.jpg" alt="Recess, page 2 of 2." loading="lazy"></figure>
+<h2 id="what-hurts">What hurts</h2>
+<p>It is night. In the terminal, a few AI agents are each working on something. I sit in front of them. I am not doing anything. I am watching the screen.</p>
+<p>I am waiting to be called. A question may come, or the work may finish. So I cannot leave. If I leave, I will not notice when it stops. But while I watch, there is nothing for me to do.</p>
+<p>I use AI agents every day, on purpose. And every day I feel my brain wearing down. Running dozens of agents nonstop is not something I want to do.</p>
+<h2 id="what-we-want">What we want</h2>
+<p>"While the AI works, I want to spend my own time. But the moment my judgment is needed, I want to be back, reliably."</p>
+<p>This is not "make the AI faster" or "run more AI". It is turning waiting time into my time.</p>
+<h2 id="what-we-have-been-using">What we have been using</h2>
+<ul><li>Watching the screen. The most reliable, and the most tiring.</li><li>herdr's sounds and toasts. I know I was called. But to hear the sound, I stay near the terminal anyway.</li><li>My phone. I miss the call.</li><li>Starting another terminal job. That turns waiting for AI into running more AI. It goes the wearing-down way.</li></ul>
+<p>None of them gave me both: leaving and coming back.</p>
+<h2 id="our-conflict">Our conflict</h2>
+<table><thead><tr><th>Force</th><th>What it is</th></tr></thead><tbody><tr><td>Push</td><td>Waiting time disappears as blank. The fatigue of watching. A chronic, heavy headache. Run several agents and there is more to watch</td></tr><tr><td>Pull</td><td>A change of scene with a show. Half automatic, half forced (you can switch it off any time). When called, the show pauses and the terminal comes to front</td></tr><tr><td>Anxiety</td><td>Agents keep running in the background while I watch a show, and I do not know what they are doing</td></tr><tr><td>Habit</td><td>Nothing needs automating. When the agent starts running, just open the book you were reading</td></tr></tbody></table>
+<p>Recess exists because of three lines drawn against the anxieties.</p>
+<h2 id="what-recess-does">What Recess does</h2>
+<ul><li>Only while an agent is working, it brings the browser to front and sends one space key. The show plays.</li><li>When an agent asks a question or finishes, it sends one more space key and brings the terminal to front. The show pauses.</li><li>The only thing that sends a key is <code>Recess.app</code>, a one-line AppleScript app. The Accessibility permission goes to that app and nothing else. The Python daemon gets none.</li></ul>
+<p>Three lines:</p>
+<ol><li>What I hand over: an unattended process gets one line's worth of permission, no more.</li><li>When I am called: leaving waits 3 seconds after my hands are off; calling back is immediate.</li><li>How I come back: one space key, 0.3 seconds, terminal.</li></ol>
+<p><code>recess off</code> makes it watch only. "That's enough for today" is your call (see <a href="install.md#switch-it-on-and-off">Switch it on and off</a>).</p>
+<p>I never watched Netflix. Now I watch it while the AI works. To me, that is surprising. What it was tested on, and what it cannot do, is in <a href="spec.md#known-weaknesses">Known weaknesses</a> and <a href="install.md#who-wrote-this">Who wrote this</a>.</p>
+<h2 id="everything-else">Everything else</h2>
+<ul><li><strong>Install guide</strong>: requirements, the two commands, the one permission, on/off, who wrote this → <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md">docs/install.md</a></li><li><strong>Specification</strong>: how it decides (state diagram), settings, logs and stopping, known weaknesses → <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/spec.md">docs/spec.md</a></li></ul>
+<h2 id="author">Author</h2>
+<p>Feel Physics / Tatsuro Ueda — <a href="https://feel-physics.jp/">feel-physics.jp</a></p>
+<h2 id="license">License</h2>
+<p>MIT. See <a href="https://github.com/tatsuro-ueda/recess/blob/main/LICENSE">LICENSE</a>.</p>
+<hr>
+<h1 id="recess日本語">Recess（日本語）</h1>
+<p>AI が働く間は休み時間。動画は勝手に再生され、herdr に呼ばれたら止まってターミナルへ戻る。</p>
+<figure><img src="manga-ja-1.jpg" alt="Recess 漫画 1/2。「AIを使え」って言うけど、もう頭がパンクしそう。脳が油揚げになっちゃう？ AI疲れの新常識「Brain Fry」" loading="lazy"></figure>
+<figure><img src="manga-ja-2.jpg" alt="Recess 漫画 2/2。" loading="lazy"></figure>
+<h2 id="何が苦しいか">何が苦しいか</h2>
+<p>夜。ターミナルの中で、AI エージェントがいくつか別々の仕事を進めている。私はその前に座っている。何もしていない。画面を見ているだけだ。</p>
+<p>呼ばれるのを待っている。質問が来るかもしれないし、終わるかもしれない。だから離れられない。離れたら、止まっているのに気づかない。でも見ていても、することはない。</p>
+<p>AI を積極的に使っている。その一方で、毎日、頭がすり減っているのを感じる。AI を多数立ててひたすら回すのは、私はしたくない。</p>
+<h2 id="私たちの望み">私たちの望み</h2>
+<p>「AI が働いている間、私は自分の時間を過ごしたい。ただし、私の判断が要る瞬間には、確実に戻りたい。」</p>
+<p>これは「AI を速くする」でも「AI を増やす」でもない。待ち時間を、自分の時間に変えることだ。</p>
+<h2 id="今まで使ってきたもの">今まで使ってきたもの</h2>
+<ul><li>画面を見続ける。いちばん確実で、いちばん疲れる。</li><li>herdr の効果音とトースト。呼ばれたことは分かる。でも音を聞くために、結局ターミナルの近くにいる。</li><li>スマホをいじる。呼ばれても気づかない。</li><li>別のターミナルの仕事を始める。AI を待つ時間を、AI を増やす時間に変えてしまう。すり減るほうへ進む。</li></ul>
+<p>どれも「離れる」と「戻る」の両方は満たさなかった。</p>
+<h2 id="私たちの葛藤">私たちの葛藤</h2>
+<table><thead><tr><th>力</th><th>中身</th></tr></thead><tbody><tr><td>押し出す力（Push）</td><td>待ち時間が空白のまま消える。画面を見張る疲れ。慢性的な重い頭痛。複数のエージェントを回すと、見張る先が増える</td></tr><tr><td>引き寄せる力（Pull）</td><td>動画を見て気分転換できる。半ば自動的に、半ば強制的に（任意にオフにできる）。呼ばれたら動画が止まり、ターミナルが前に出る</td></tr><tr><td>不安（Anxiety）</td><td>動画を見ている間に、裏で AI エージェントを走らせること。何をしているか、わからない</td></tr><tr><td>慣れ（Habit）</td><td>自動化する必要はない。AI エージェントが走り始めたら、読みかけの本を開いて読めばいい</td></tr></tbody></table>
+<p>Recess は、不安に対して3本の線を引くことで成り立っている。</p>
+<h2 id="recess-がすること">Recess がすること</h2>
+<ul><li>AI が働いている間だけ、ブラウザを前に出してスペースキーを1回送る。動画が動く。</li><li>AI が質問したか、終わったら、スペースをもう1回送って、ターミナルを前に出す。動画が止まる。</li><li>キーを送るのは、AppleScript 1行のアプリ <code>Recess.app</code> だけ。アクセシビリティの許可はこのアプリにだけ出す。常駐の python3 には何も渡さない。</li></ul>
+<p>線は3本。</p>
+<ol><li>任せる範囲：無人で動くものには1行ぶんの権限しか渡さない。</li><li>呼ばれる時機：連れ出す側は手を離して3秒待つ。呼び戻す側は即時。</li><li>戻り方：スペース1回、0.3秒、ターミナル。</li></ol>
+<p><code>recess off</code> で見張るだけになる。今日はここまで、はあなたが決める（<a href="install.md#on-と-off-の切り替え">ON と OFF の切り替え</a>）。</p>
+<p>もともと私は Netflix をまったく見ない人間だった。それが、AI が働いている間に Netflix を楽しんでいる。私にとっては驚くべきことだ。何で確かめたか、何ができないかは<a href="spec.md#分かっている弱点">分かっている弱点</a>と<a href="install.md#誰が書いたか">誰が書いたか</a>にある。</p>
+<h2 id="そのほかのこと">そのほかのこと</h2>
+<ul><li><strong>導入方法</strong>：動作の前提、2行のコマンド、許可、ON/OFF、誰が書いたか → <a href="install.md#recess-導入方法日本語">docs/install.md</a></li><li><strong>仕様詳細</strong>：どう判断しているか（状態遷移図）、設定、ログと止め方、分かっている弱点 → <a href="spec.md#recess-仕様詳細日本語">docs/spec.md</a></li></ul>
+<h2 id="作者">作者</h2>
+<p>Feel Physics / 植田達郎 — <a href="https://feel-physics.jp/">feel-physics.jp</a></p>
+<h2 id="ライセンス">ライセンス</h2>
+<p>MIT。<a href="https://github.com/tatsuro-ueda/recess/blob/main/LICENSE">LICENSE</a> を見てください。</p>
 </main>
-
 <footer>
-  <p><a href="https://feel-physics.jp/">Feel Physics</a></p>
+<p>Generated from <a href="https://github.com/tatsuro-ueda/recess/blob/main/README.md">README.md</a> by <code>scripts/build-site.py</code>.</p>
 </footer>
-
-<script>
-  // コピー用のボタン。外部スクリプトは使わない。クリップボードが使えない環境では pre をタップして全選択できる。
-  document.querySelectorAll('.copy').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var pre = document.getElementById(btn.getAttribute('data-copy'));
-      if (!pre) { return; }
-      var text = pre.textContent;
-      var done = function () {
-        btn.textContent = 'コピーした';
-        setTimeout(function () { btn.textContent = 'コピー'; }, 1500);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(done, function () { selectPre(pre); });
-      } else {
-        selectPre(pre);
-      }
-    });
-  });
-  function selectPre(pre) {
-    var range = document.createRange();
-    range.selectNodeContents(pre);
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-</script>
 </body>
 </html>

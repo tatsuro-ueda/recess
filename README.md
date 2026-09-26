@@ -53,14 +53,14 @@ Three lines:
 2. When I am called: leaving waits 3 seconds after my hands are off; calling back is immediate.
 3. How I come back: one space key, 0.3 seconds, terminal.
 
-`recess off` makes it watch only. "That's enough for today" is your call (see [Switch it on and off](docs/details.md#switch-it-on-and-off)).
+`recess off` makes it watch only. "That's enough for today" is your call (see [Switch it on and off](docs/install.md#switch-it-on-and-off)).
 
-I never watched Netflix. Now I watch it while the AI works. To me, that is surprising. What it was tested on, and what it cannot do, is in [Known weaknesses](docs/details.md#known-weaknesses) and [Who wrote this](docs/details.md#who-wrote-this).
+I never watched Netflix. Now I watch it while the AI works. To me, that is surprising. What it was tested on, and what it cannot do, is in [Known weaknesses](docs/spec.md#known-weaknesses) and [Who wrote this](docs/install.md#who-wrote-this).
 
 ## Everything else
 
-How it decides (state diagram), install, permissions, requirements, settings, logs and stopping, on/off, known weaknesses, and who wrote this are on one page: [docs/details.md](docs/details.md).
-
+- **Install guide**: requirements, the two commands, the one permission, on/off, who wrote this → [docs/install.md](docs/install.md)
+- **Specification**: how it decides (state diagram), settings, logs and stopping, known weaknesses → [docs/spec.md](docs/spec.md)
 
 ## Author
 
@@ -125,14 +125,14 @@ Recess は、不安に対して3本の線を引くことで成り立っている
 2. 呼ばれる時機：連れ出す側は手を離して3秒待つ。呼び戻す側は即時。
 3. 戻り方：スペース1回、0.3秒、ターミナル。
 
-`recess off` で見張るだけになる。今日はここまで、はあなたが決める（[ON と OFF の切り替え](docs/details.md#on-と-off-の切り替え)）。
+`recess off` で見張るだけになる。今日はここまで、はあなたが決める（[ON と OFF の切り替え](docs/install.md#on-と-off-の切り替え)）。
 
-もともと私は Netflix をまったく見ない人間だった。それが、AI が働いている間に Netflix を楽しんでいる。私にとっては驚くべきことだ。何で確かめたか、何ができないかは[分かっている弱点](docs/details.md#分かっている弱点)と[誰が書いたか](docs/details.md#誰が書いたか)にある。
+もともと私は Netflix をまったく見ない人間だった。それが、AI が働いている間に Netflix を楽しんでいる。私にとっては驚くべきことだ。何で確かめたか、何ができないかは[分かっている弱点](docs/spec.md#分かっている弱点)と[誰が書いたか](docs/install.md#誰が書いたか)にある。
 
 ## そのほかのこと
 
-どう判断しているか（状態遷移図）、導入、許可、動作の前提、設定、ログと止め方、ON/OFF、分かっている弱点、誰が書いたかは1ページにまとめてあります: [docs/details.md（日本語はページ後半）](docs/details.md#recess-詳細日本語)。
-
+- **導入方法**：動作の前提、2行のコマンド、許可、ON/OFF、誰が書いたか → [docs/install.md](docs/install.md#recess-導入方法日本語)
+- **仕様詳細**：どう判断しているか（状態遷移図）、設定、ログと止め方、分かっている弱点 → [docs/spec.md](docs/spec.md#recess-仕様詳細日本語)
 
 ## 作者
 
