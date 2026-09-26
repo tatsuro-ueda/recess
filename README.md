@@ -56,7 +56,7 @@ Space is a toggle. Spacr does not know whether the video is playing. It sends on
 Two lines. Download, read, then run. Don't pipe curl into sh.
 
 ```sh
-curl -fsSLO https://spacr.feel-physics.jp/install.sh
+curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
 sh install.sh
 ```
 
@@ -268,7 +268,7 @@ Spacr は常駐プログラム（Python ファイル1つ。launchd が動かす�
 2行です。落として、読んで、実行する。curl を sh へパイプしないでください。
 
 ```sh
-curl -fsSLO https://spacr.feel-physics.jp/install.sh
+curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
 sh install.sh
 ```
 

@@ -2,11 +2,11 @@
 # Spacr installer for macOS — herdr の AI に呼ばれたらスペースキーを1回押す小さな常駐を入れる
 #
 # 使い方（パイプ実行ではなく、いったん保存してから実行する）:
-#   curl -fsSLO https://spacr.feel-physics.jp/install.sh
+#   curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
 #   sh install.sh [--with-afplay] [--rebuild-app] [--fetch] [--dry-run]
 #
 # このスクリプトは実行時に常駐本体 spacr-watch.py も取得する（同梱されていなければ）。
-# 読んでから入れたい人は https://spacr.feel-physics.jp/spacr-watch.py（GitHub にも同じもの）を先に読む。
+# 読んでから入れたい人は https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/spacr-watch.py（GitHub にも同じもの）を先に読む。
 #
 # やること:
 #   1. macOS 14 以降と必須コマンド（herdr 0.9.1+, python3, osacompile, launchctl, lsappinfo, codesign, plutil, PlistBuddy）を確認
@@ -41,8 +41,8 @@ APP_BUILD="1"                          # Spacr.app の中身（AppleScript・Inf
 LABEL="jp.feel-physics.spacr"          # launchd のラベル（plist のファイル名にもなる）
 BUNDLE_ID="jp.feel-physics.Spacr"      # Spacr.app の識別子（アクセシビリティ許可はこれに紐づく）
 USAGE_DESC="前面のアプリへスペースキーを1回送るために、System Events を使います。"  # オートメーション許可のダイアログに出る文
-BASE_URL="${SPACR_BASE_URL:-https://spacr.feel-physics.jp}"
-FALLBACK_URL="${SPACR_FALLBACK_URL:-https://raw.githubusercontent.com/tatsuro-ueda/spacr/main}"
+BASE_URL="${SPACR_BASE_URL:-https://raw.githubusercontent.com/tatsuro-ueda/spacr/main}"
+FALLBACK_URL="${SPACR_FALLBACK_URL:-https://raw.githubusercontent.com/tatsuro-ueda/spacr/HEAD}"
 MIN_MACOS="14"
 MIN_HERDR="0.9.1"
 
