@@ -289,6 +289,7 @@ class Watcher:
         self.pending_off = False
         self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
         self.tab_of = {}             # key -> "endpoint/tab_id"（同じタブの2ペインは一体で判断する）
+        self.fg_prev = None          # 前回 foreground だったか（None は起動直後）
         self.remote_cache = {}  # label -> (agents, time)
         self.remote_down = set()
         self.last_summary = ""
@@ -404,11 +405,20 @@ class Watcher:
         view = in_view(self.active)
         view_working = [k for k in view if now.get(k) == "working"]
         view_reading = [k for k in view if k in self.reading]
-        want_off = (not attention) and afp is not None and bool(view_working) and not view_reading
-        if not want_off:
-            self.pending_off = False
-        elif changed:
+        # foreground = 人の手が要る（blocked / done がどこかにある、または見ているタブに reading がある）
+        # background = idle と working だけ。ブラウザへ行くのは foreground → background へ移った瞬間だけ
+        # （2026-09-26 変更。background の中で状態が変わっても、それだけでは行かない）
+        fg_now = bool(attention) or bool(view_reading)
+        if self.fg_prev is None:
+            self.fg_prev = fg_now            # 起動直後は遷移とみなさない
+        if self.fg_prev and not fg_now:
             self.pending_off = True
+            log(f"FG->BG: attention gone, reading gone -> browser armed (working in view: {bool(view_working)})")
+        elif fg_now:
+            self.pending_off = False
+        self.fg_prev = fg_now
+        # 実際に行けるのは、見ているタブに working があるときだけ（無ければ armed のまま待つ）
+        want_off = (not attention) and afp is not None and bool(view_working) and not view_reading
 
         app = front_app()
         if app in TERMINAL_APPS:
@@ -416,7 +426,7 @@ class Watcher:
         elif app in BROWSER_APPS:            # ブラウザだけ覚える（システム設定などを戻り先にしない）
             LAST_OTHER_APP["name"] = app
 
-        if self.pending_off:
+        if self.pending_off and want_off:
             idle = hid_idle()
             since_return = time.monotonic() - self.last_return_at
             if since_return < RETURN_COOLDOWN:
