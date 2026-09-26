@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+"""Spacr — AI が働いている間はブラウザの動画を再生し、呼ばれたら止めてターミナルへ戻る常駐。
+
+名前の由来: 「スペースキーを1回押すだけの小さなアプリ（Spacr.app）」。
+このファイルは AI（Claude）に書かせ、判断は作者（植田）がした。
+
+何をするか
+  herdr のエージェント状態を Mac＋他マシン（herdr machine list の enabled なもの）から
+  2秒おきに集め、次の2つを1か所で判定する。
+  見ている : 「見ている端末（最後にフォーカスが動いた側）」で、フォーカス中のペインと同じタブに
+             あるペイン全部（herdr の tab_id で束ねる。同じタブの2ペインは一体で判断する）。
+  待ち時間 : 見ているタブのどれかの AI が working で、そのタブに読み中（reading）のペインが無く、
+             blocked/done がどこにも無く、手を離して HANDS_OFF 秒、最前面がターミナルのとき
+             → 最後に見ていたブラウザ（既定 Safari）を前に出し、Spacr.app でスペース1回（再生）。
+             idle は「次を打つ準備」なので行かない。
+  呼ばれた : どこかに blocked(ask) / done(stop・未読) が新しく現れた、または見ているタブのペインが
+             working→idle になったとき → 画面を点け、最前面がブラウザならスペース1回（一時停止）
+             →0.3秒→ターミナルを前に出す。ターミナルを見ているなら押さない。
+  猶予     : 呼び戻し後 RETURN_COOLDOWN 秒はブラウザへ行かない（AI が続けて聞いてくるのを待つ）。
+  reading  : 見ているタブのペインが done/working→idle になったら読み中。
+             見ている端末で別の idle ペインへ移ったら終わる。
+  ジャンプ : Mac のペインが done になったら herdr agent focus で自動ジャンプ
+             （手を離して HANDS_OFF 秒以上、who に SSH ログインが無いとき）。
+
+権限
+  スペースを押すのは ~/Applications/Spacr.app（中身は key code 49 の1行）だけ。
+  アクセシビリティ許可と、System Events を制御するオートメーション許可は、このアプリにだけ出す。
+  python3 には出さない。
+  この常駐が Mac 側で使う道具は権限不要のものだけ: open, lsappinfo, caffeinate, ioreg, who
+  （osascript は使わない）。ほかに herdr と、他マシンの状態を取るための ssh を使う
+  （鍵は各自の ~/.ssh。パスワードや秘密はこのファイルに持たない）。
+
+分かっている弱点（正直に書く）
+  ・スペースは「切り替え」で、再生中かどうかを持たない。ターミナルにいるときは動画を止めておく約束。
+  ・Safari＋Netflix でしか確かめていない。
+  ・Spacr.app を作り直す（install.sh --rebuild-app。壊れているか古い版なら再実行でも作り直す）と
+    許可が外れることがある（システム設定で削除→追加し直し）。
+    Spacr.app が無いときは「cannot open」をログに残してスキップするだけで、落ちはしない。
+  ・macOS 14.3.1 と herdr 0.9.1 でしか確かめていない。
+  ・作者の Mac 以外で動かした実績はまだ無い。
+  ・他マシンでは非対話シェルで `herdr agent list` を実行する。相手の PATH に ~/.local/bin が無いと
+    command not found → unreachable 扱いになり、黙って Mac だけの監視になる（ログの
+    「remote <label>: unreachable」で気づける）。
+  ・enabled なマシンが落ちていると、1周が ConnectTimeout 5秒×台数まで延びる（POLL を超える）。
+  ・タブ束ねは `herdr agent list` の tab_id を使う。tab_id を返さない herdr では、ペイン1つずつの判定に戻る。
+
+置き場
+  本体   : ~/.local/share/spacr/spacr-watch.py（python3 標準ライブラリのみ）
+  状態   : ~/.local/state/spacr/（watch.log ほか）
+  launchd: ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
+           ProgramArguments は install.sh が見つけた python3（通常 /usr/bin/python3）を絶対パスで書き、
+           EnvironmentVariables の PATH に ~/.local/bin と herdr のフォルダを入れる（launchd の既定 PATH には無い）。
+           KeepAlive は SuccessfulExit=false（異常終了のときだけ再起動）、ThrottleInterval 5 で、落ちても5秒後に戻る。
+           同じ役目の常駐を別名で動かしていた人は、両方がスペースを押して打ち消し合うので、
+           先に旧いほうを launchctl bootout してから load する。
+
+環境変数（すべて任意。数値が壊れていたら既定へ戻し、起動は止めない）
+  SPACR_HERDR_BIN               herdr の場所（既定: PATH から探す → ~/.local/bin/herdr）
+  SPACR_POLL_SECONDS            状態を集める間隔（既定 2）
+  SPACR_HANDS_OFF_SECONDS       「手を離した」とみなす秒数（既定 3）
+  SPACR_RETURN_COOLDOWN_SECONDS 呼び戻し後にブラウザへ行かない秒数（既定 20）
+  SPACR_TERMINAL_APPS           ターミナルとみなすプロセス名。空白区切り
+                                （既定 "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux"）
+  SPACR_BROWSER_APPS            ブラウザとみなすアプリ名。名前に空白を含むのでカンマ区切り
+                                （既定 "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge"）
+  SPACR_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
+  SPACR_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
+  SPACR_DRY_RUN=1               判定だけ行い、open / caffeinate / focus を実行しない
+
+状態は毎回の差分（前回→今回）で見る。
+"""
+import datetime
+import json
+import os
+import re
+import shutil
+import subprocess
+import time
+
+HOME = os.path.expanduser("~")
+STATE_DIR = os.path.join(HOME, ".local/state/spacr")
+LOG = os.path.join(STATE_DIR, "watch.log")
+
+
+def log(msg):
+    """ログを1行足す。書けない（ディスク満杯・フォルダ削除など）ことで常駐を止めない。"""
+    line = f"{datetime.datetime.now():%F %T} {msg}\n"
+    try:
+        with open(LOG, "a") as f:
+            f.write(line)
+    except OSError:
+        try:
+            os.makedirs(STATE_DIR, exist_ok=True)
+            with open(LOG, "a") as f:
+                f.write(line)
+        except OSError:
+            pass
+
+
+ENV_WARNINGS = []   # 起動前に見つけた設定の問題。main() の最初にまとめてログへ出す
+
+
+def env_number(name, default, cast):
+    """環境変数を数値として読む。壊れた値（例: int に "3.5"）は既定へ戻し、import 時に落ちない。"""
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return cast(raw)
+    except ValueError:
+        ENV_WARNINGS.append(f"{name}={raw!r} is not a number -> using default {default}")
+        return default
+
+
+HERDR = (os.environ.get("SPACR_HERDR_BIN")
+         or shutil.which("herdr")
+         or os.path.join(HOME, ".local/bin/herdr"))
+POLL = env_number("SPACR_POLL_SECONDS", 2.0, float)
+HANDS_OFF = env_number("SPACR_HANDS_OFF_SECONDS", 3, int)
+RETURN_COOLDOWN = env_number("SPACR_RETURN_COOLDOWN_SECONDS", 20, int)  # 呼び戻し後、次にブラウザへ行くまでの最短秒数
+TERMINAL_APPS = set(os.environ.get(
+    "SPACR_TERMINAL_APPS", "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux").split())
+REMOTE_STALE = 30          # 秒。取得に失敗した他マシンの状態を、この間は前回の値で持ちこたえる
+DRY_RUN = os.environ.get("SPACR_DRY_RUN") == "1"
+SSH_CTL = os.path.join(HOME, ".ssh", "ctl-spacr-%C")
+
+try:
+    os.makedirs(STATE_DIR, exist_ok=True)
+except OSError as _e:
+    ENV_WARNINGS.append(f"cannot create {STATE_DIR}: {_e!r}")
+
+
+def run(cmd, timeout=8, input_=None):
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, input=input_)
+        return p.returncode, p.stdout, p.stderr
+    except Exception as e:  # timeout など
+        return -1, "", str(e)
+
+
+# ---------- 状態の収集 ----------
+
+def parse_agents(raw):
+    try:
+        return json.loads(raw)["result"]["agents"]
+    except Exception:
+        return None
+
+
+def local_agents():
+    rc, out, _ = run([HERDR, "agent", "list"], timeout=5)
+    return parse_agents(out) if rc == 0 else None
+
+
+def machines():
+    """herdr machine list の enabled な行 → [(label, target)]。接続先はここからだけ読む（決め打ちしない）。"""
+    rc, out, _ = run([HERDR, "machine", "list"], timeout=5)
+    result = []
+    if rc != 0:
+        return result
+    for line in out.splitlines():
+        cols = line.split("\t")
+        if len(cols) >= 5 and cols[4].strip() == "enabled":
+            result.append((cols[1].strip(), cols[2].strip()))
+    return result
+
+
+def remote_agents(target):
+    cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ControlMaster=auto", "-o", f"ControlPath={SSH_CTL}",
+           "-o", "ControlPersist=600", "-o", "ConnectTimeout=5", "-o", "ServerAliveInterval=15",
+           "-o", "LogLevel=ERROR", target, "herdr agent list"]
+    rc, out, _ = run(cmd, timeout=10)
+    return parse_agents(out) if rc == 0 else None
+
+
+# ---------- Mac 側の観測・操作 ----------
+
+def hid_idle():
+    rc, out, _ = run(["ioreg", "-c", "IOHIDSystem"], timeout=5)
+    m = re.search(r'"HIDIdleTime" = (\d+)', out)
+    return int(m.group(1)) // 1_000_000_000 if m else 0
+
+
+def front_app():
+    """最前面アプリ名。lsappinfo だけを使う（python3 に System Events の許可を求めない）。"""
+    rc, asn, _ = run(["lsappinfo", "front"], timeout=5)
+    asn = asn.strip()
+    if not asn:
+        return "unknown"
+    _, lst, _ = run(["lsappinfo", "list"], timeout=5)
+    for line in lst.splitlines():
+        if asn in line:
+            m = re.match(r'\s*\d+\) "([^"]*)"', line)
+            return m.group(1) if m else "unknown"
+    return "unknown"
+
+
+def ssh_login_present():
+    _, out, _ = run(["who"], timeout=5)
+    return "(" in out
+
+
+def wake(reason):
+    log(f"WAKE  {reason}")
+    if not DRY_RUN:
+        try:
+            subprocess.Popen(["caffeinate", "-u", "-t", "2"])
+        except OSError as e:   # macOS には必ずあるが、無くても常駐は止めない
+            log(f"WAKE  caffeinate failed: {e!r}")
+
+
+VIDEO_APP_FIXED = os.environ.get("SPACR_VIDEO_APP", "")     # 決め打ちしたいときだけ指定（例 Safari / Comet）
+BROWSER_APPS = {name.strip() for name in os.environ.get(
+    "SPACR_BROWSER_APPS", "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge").split(",")
+    if name.strip()}
+LAST_OTHER_APP = {"name": "Safari"}                        # 最後に見ていたブラウザ（既定 Safari）
+
+
+def video_app():
+    return VIDEO_APP_FIXED or LAST_OTHER_APP["name"]
+
+
+SPACE_APP = os.path.join(HOME, "Applications", "Spacr.app")
+LAST_TERMINAL = {"name": os.environ.get("SPACR_DEFAULT_TERMINAL", "iTerm")}   # open -a に渡す名前。プロセス名 iTerm2 → アプリ名 iTerm
+TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
+
+
+def toggle_video(why):
+    """権限不要の open で前面化を確認し、専用アプリからスペースを1回送る。"""
+    # Python は open / lsappinfo だけを使う。キー送信の権限は Spacr.app が持つ。
+    target = video_app()
+    rc, _, err = run(["open", "-a", target], timeout=5)
+    if rc != 0:
+        log(f"TOGGLE {why} -> skipped: cannot open {target}: {err.strip()[:80]}")
+        return False
+    deadline = time.monotonic() + 3
+    while front_app() != target:
+        if time.monotonic() >= deadline:
+            log(f"TOGGLE {why} -> skipped: {target} did not become frontmost")
+            return False
+        time.sleep(0.1)
+    time.sleep(0.2)
+    if front_app() != target:
+        log(f"TOGGLE {why} -> skipped: focus left {target}")
+        return False
+    rc, _, err = run(["open", "-g", "-W", SPACE_APP], timeout=15)
+    # open の終了コードはアプレットの終了だけを示す。動画の再生状態は検証できない。
+    result = "helper exited (playback unverified)" if rc == 0 else err.strip()[:80]
+    log(f"TOGGLE {why} -> {result}")
+    return rc == 0
+
+
+def video_play(reason):
+    """ブラウザを前に出し、専用アプリからスペースを送る。"""
+    log(f"PLAY  {reason}")
+    if DRY_RUN:
+        return
+    toggle_video("play")
+
+
+def video_pause_and_return(reason):
+    """ブラウザを見ているときだけ、スペースを送ってからターミナルを前に出す。ターミナルを見ているなら何もしない。"""
+    app = front_app()
+    if app in TERMINAL_APPS:
+        log(f"RETURN {reason}: already on terminal ({app}) -> no toggle")
+        return
+    log(f"RETURN {reason} from {app}")
+    if DRY_RUN:
+        return
+    toggle_video("pause")
+    time.sleep(0.3)
+    run(["open", "-a", LAST_TERMINAL["name"]], timeout=5)
+
+
+def jump(pane_id, reason):
+    log(f"JUMP  -> {pane_id} {reason}")
+    if not DRY_RUN:
+        run([HERDR, "agent", "focus", pane_id], timeout=5)
+
+
+# ---------- 判定 ----------
+
+class Watcher:
+    def __init__(self):
+        self.prev = {}          # key -> status
+        self.prev_focus = {}    # endpoint -> key or None
+        self.reading = set()    # keys
+        self.active = "local"   # 最後にフォーカスが動いた端末
+        self.pending_off = False
+        self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
+        self.tab_of = {}             # key -> "endpoint/tab_id"（同じタブの2ペインは一体で判断する）
+        self.remote_cache = {}  # label -> (agents, time)
+        self.remote_down = set()
+        self.last_summary = ""
+
+    def collect(self):
+        """{endpoint: agents or None}"""
+        eps = {"local": local_agents()}
+        now = time.time()
+        for label, target in machines():
+            ag = remote_agents(target)
+            if ag is None:
+                cached = self.remote_cache.get(label)
+                if cached and now - cached[1] < REMOTE_STALE:
+                    ag = cached[0]
+                if label not in self.remote_down:
+                    log(f"remote {label}: unreachable (using cached for {REMOTE_STALE}s)")
+                    self.remote_down.add(label)
+            else:
+                self.remote_cache[label] = (ag, now)
+                if label in self.remote_down:
+                    log(f"remote {label}: back")
+                    self.remote_down.discard(label)
+            eps[label] = ag
+        return eps
+
+    def tick(self):
+        eps = self.collect()
+        now, focus, fstat = {}, {}, {}
+        for ep, agents in eps.items():
+            if agents is None:
+                # 取れなかった端末は前回の値を引き継ぐ（消えたと誤解しない）
+                for k, v in self.prev.items():
+                    if k.startswith(ep + "/"):
+                        now[k] = v
+                focus[ep] = self.prev_focus.get(ep)
+                fstat[ep] = now.get(focus[ep]) if focus[ep] else None
+                continue
+            focus[ep] = None
+            for a in agents:
+                key = f"{ep}/{a['pane_id']}"
+                now[key] = a.get("agent_status", "?")
+                self.tab_of[key] = f"{ep}/{(a.get('tab_id') or a['pane_id'])}"
+                if a.get("focused"):
+                    focus[ep] = key
+            fstat[ep] = now.get(focus[ep]) if focus[ep] else None
+
+        # 見ている端末: 最後にフォーカスが動いた側
+        for ep in focus:
+            if ep in self.prev_focus and focus[ep] != self.prev_focus[ep]:
+                self.active = ep
+        if self.active not in focus:
+            self.active = "local"
+
+        # 「見ているペイン群」: 各端末で、フォーカス中のペインと同じタブにあるペイン全部
+        def in_view(ep):
+            fp = focus.get(ep)
+            if not fp:
+                return []
+            tab = self.tab_of.get(fp)
+            return [k for k in now if k.startswith(ep + "/") and self.tab_of.get(k) == tab] or [fp]
+
+        # reading の開始（どの端末でも、見ていたタブのペインが done/working → idle）
+        for ep in focus:
+            for k in in_view(ep):
+                if now.get(k) == "idle" and self.prev.get(k) in ("done", "working"):
+                    self.reading.add(k)
+        # reading の終了: 見ている端末で別の idle ペインへ移った / reading ペインが idle でなくなった
+        afp = focus.get(self.active)
+        if afp and now.get(afp) == "idle" and afp not in self.reading:
+            self.reading = {k for k in self.reading if not k.startswith(self.active + "/")}
+        self.reading = {k for k in self.reading if now.get(k) == "idle"}
+
+        changed = (now != self.prev) or (focus != self.prev_focus)
+        attention = [k for k, s in now.items() if s in ("blocked", "done")]
+        new_attention = [k for k in attention if self.prev.get(k) not in ("blocked", "done")]
+        if not self.prev_focus:
+            # 起動直後: 既にある blocked/done を「新しく現れた」と誤解して呼び戻さない（再生の判定は行う）
+            new_attention = []
+
+        summary = (" ".join(f"{k}={v}" for k, v in sorted(now.items())) +
+                   f" | active={self.active} focus={afp}:{fstat.get(self.active)} tab={[k.split('/', 1)[1] for k in in_view(self.active)]}" +
+                   f" reading={sorted(self.reading) or '-'}")
+        if summary != self.last_summary:
+            log(f"state: {summary}")
+            self.last_summary = summary
+
+        # 見ていたペインが目の前で終わると herdr は done を飛ばして idle にする。
+        # 動画を再生中ならそれも「呼ばれた」扱いにして戻る。
+        view_keys = {k for ep in focus for k in in_view(ep)}
+        finished_in_view = [k for k in now if now[k] == "idle" and self.prev.get(k) == "working"
+                            and k in view_keys]
+        if new_attention or finished_in_view:
+            why = f"new attention: {new_attention}" if new_attention else f"finished in view: {finished_in_view}"
+            wake(why)
+            self.pending_off = False
+            video_pause_and_return(why)
+            self.last_return_at = time.monotonic()
+            for k in new_attention:
+                if k.startswith("local/") and now[k] == "done":
+                    if ssh_login_present():
+                        log("no jump: ssh login present")
+                    elif hid_idle() >= HANDS_OFF:
+                        jump(k.split("/", 1)[1], f"(hands-off {hid_idle()}s)")
+                    else:
+                        log("no jump: hands on")
+
+        # ブラウザへ行ってよいか
+        fs = fstat.get(self.active)
+        # ブラウザへ行くのは「見ているタブのAIが働いていて、待っている」ときだけ。
+        # idle（読み中でなくても）は「次を打つ準備」なので行かない
+        # （呼び戻された直後に2〜3回ブラウザへ戻されるのは、idle で行く分岐が原因だった）。
+        # 同じタブに読み中のペインがあるなら、隣のペインが working でも行かない。
+        view = in_view(self.active)
+        view_working = [k for k in view if now.get(k) == "working"]
+        view_reading = [k for k in view if k in self.reading]
+        want_off = (not attention) and afp is not None and bool(view_working) and not view_reading
+        if not want_off:
+            self.pending_off = False
+        elif changed:
+            self.pending_off = True
+
+        app = front_app()
+        if app in TERMINAL_APPS:
+            LAST_TERMINAL["name"] = TERMINAL_OPEN_NAMES.get(app, app)
+        elif app in BROWSER_APPS:            # ブラウザだけ覚える（システム設定などを戻り先にしない）
+            LAST_OTHER_APP["name"] = app
+
+        if self.pending_off:
+            idle = hid_idle()
+            since_return = time.monotonic() - self.last_return_at
+            if since_return < RETURN_COOLDOWN:
+                pass                        # 呼び戻した直後は、AIが続けて聞いてくるかを見る猶予
+            elif idle >= HANDS_OFF:
+                if app in TERMINAL_APPS:
+                    video_play(f"{self.active} {afp}:{fs} hands-off={idle}s front={app}")
+                    self.pending_off = False
+                else:
+                    if getattr(self, "_front_logged", None) != app:
+                        log(f"front app is {app} -> keep waiting")
+                        self._front_logged = app
+
+        self.prev, self.prev_focus = now, focus
+
+
+def main():
+    log(f"start pid={os.getpid()} herdr={HERDR} poll={POLL}s hands_off={HANDS_OFF}s dry_run={DRY_RUN}")
+    for w_msg in ENV_WARNINGS:
+        log(f"config: {w_msg}")
+    w = Watcher()
+    while True:
+        t0 = time.time()
+        try:
+            w.tick()
+        except Exception as e:
+            log(f"tick error: {e!r}")
+        time.sleep(max(0.2, POLL - (time.time() - t0)))
+
+
+if __name__ == "__main__":
+    main()
