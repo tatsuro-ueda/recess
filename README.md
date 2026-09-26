@@ -1,23 +1,23 @@
-# Spacr
+# Recess
 
-English first, 日本語は後半（[日本語へ](#spacr-日本語)）.
+English first, 日本語は後半（[日本語へ](#recess-日本語)）.
 
 ---
 
-While your AI agent is working, a video plays in your browser. When the agent calls you, Spacr pauses the video and brings you back to the terminal.
+While your AI agent is working, a video plays in your browser. When the agent calls you, Recess pauses the video and brings you back to the terminal.
 
-Spacr is for people who run AI coding agents in a terminal on a Mac with [herdr](https://herdr.dev). The name comes from the only part of it that needs a permission: a tiny app that presses the space key.
+Recess is for people who run AI coding agents in a terminal on a Mac with [herdr](https://herdr.dev). The name comes from the only part of it that needs a permission: a tiny app that presses the space key.
 
 ## What happens
 
-Spacr is a resident program (one Python file, run by launchd) that asks herdr every 2 seconds what your agents are doing, on this Mac and on the machines you have registered in herdr. It keeps to three lines the author drew. Each line can be moved a little (see Settings). So far the lines have held for one night.
+Recess is a resident program (one Python file, run by launchd) that asks herdr every 2 seconds what your agents are doing, on this Mac and on the machines you have registered in herdr. It keeps to three lines the author drew. Each line can be moved a little (see Settings). So far the lines have held for one night.
 
 ### Line 1. What it is allowed to do
 
 - The resident program has no special permission. It runs `herdr`, `ssh`, `open`, `lsappinfo`, `ioreg`, `who` and `caffeinate`. None of these need Accessibility or Automation permission. It does not use `osascript`.
 - It uses your existing ssh keys to run `herdr agent list` on the machines that are `enabled` in `herdr machine list`. Connections are shared, so this is not a new login every 2 seconds.
-- The one act that needs a permission, sending a keystroke, is done by a separate app, `~/Applications/Spacr.app`. Its script is one line of AppleScript: `tell application "System Events" to key code 49` (49 is the space key); `osadecompile` shows it. Around that line, `install.sh` sets a bundle identifier (`jp.feel-physics.Spacr`), hides the app from the Dock and signs it ad hoc. The resident program can only launch it. It cannot change what it does.
-- Two permissions go to Spacr.app, and only to Spacr.app: Accessibility (you add it by hand) and Automation for controlling System Events (a dialog the first time it presses space). Not to python3, not to your terminal.
+- The one act that needs a permission, sending a keystroke, is done by a separate app, `~/Applications/Recess.app`. Its script is one line of AppleScript: `tell application "System Events" to key code 49` (49 is the space key); `osadecompile` shows it. Around that line, `install.sh` sets a bundle identifier (`jp.feel-physics.Recess`), hides the app from the Dock and signs it ad hoc. The resident program can only launch it. It cannot change what it does.
+- Two permissions go to Recess.app, and only to Recess.app: Accessibility (you add it by hand) and Automation for controlling System Events (a dialog the first time it presses space). Not to python3, not to your terminal.
 
 ### Line 2. When it moves you
 
@@ -30,7 +30,7 @@ Spacr is a resident program (one Python file, run by launchd) that asks herdr ev
 - no agent anywhere is `blocked` (asking you something) or `done` (finished, unread);
 - your hands have been off the keyboard and mouse for 3 seconds;
 - the frontmost app is a terminal;
-- at least 20 seconds have passed since Spacr last called you back.
+- at least 20 seconds have passed since Recess last called you back.
 
 Then it brings the browser forward (the one you last used; Safari until then), checks with `lsappinfo` that it really is frontmost, and presses space once. If the browser has not come forward within 3 seconds, it presses nothing and writes why to the log.
 
@@ -41,7 +41,7 @@ It never goes to the video while the agents you are looking at are `idle`. That 
 - a `blocked` or `done` appears that was not there 2 seconds ago, on any machine; or
 - a pane in the tab you are looking at goes from `working` to `idle` (herdr skips `done` when you are watching).
 
-Then it wakes the display, presses space once if you are not on the terminal, waits 0.3 seconds, and brings the terminal forward. If you are already on the terminal it presses nothing. `blocked` or `done` that already existed when Spacr started do not call you.
+Then it wakes the display, presses space once if you are not on the terminal, waits 0.3 seconds, and brings the terminal forward. If you are already on the terminal it presses nothing. `blocked` or `done` that already existed when Recess started do not call you.
 
 One extra: when a pane on this Mac becomes `done`, your hands have been off for 3 seconds, and nobody is logged in over ssh (from a phone, say), it jumps to that pane with `herdr agent focus`.
 
@@ -49,54 +49,54 @@ One extra: when a pane on this Mac becomes `done`, your hands have been off for 
 
 Space once, 0.3 seconds, terminal. That is the whole return path.
 
-Space is a toggle. Spacr does not know whether the video is playing. It sends one key at each transition and trusts that the video was paused while you were at the terminal. That is the deal you make with it: at the terminal, the video is paused.
+Space is a toggle. Recess does not know whether the video is playing. It sends one key at each transition and trusts that the video was paused while you were at the terminal. That is the deal you make with it: at the terminal, the video is paused.
 
 ## Install
 
 Two lines. Download, read, then run. Don't pipe curl into sh.
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
+curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh
 sh install.sh
 ```
 
-Source and install files live on GitHub. The same file is also mirrored at `spacr.feel-physics.jp` once that domain is live:
+Source and install files live on GitHub. The same file is also mirrored at `recess.feel-physics.jp` once that domain is live:
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
+curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh
 ```
 
-`install.sh` fetches the resident program, `spacr-watch.py`, when it runs (from the same host, falling back to GitHub), unless a copy sits next to it. If you read before you run, read both; GitHub has the same files.
+`install.sh` fetches the resident program, `recess-watch.py`, when it runs (from the same host, falling back to GitHub), unless a copy sits next to it. If you read before you run, read both; GitHub has the same files.
 
 `install.sh` needs no sudo and does four things:
 
-1. Puts the resident program at `~/.local/share/spacr/spacr-watch.py` (python3, standard library only).
-2. Builds `~/Applications/Spacr.app` on your Mac with `osacompile`, from the one line above. Nothing pre-built is downloaded. If a healthy Spacr.app is already there, it is kept.
-3. Writes `~/Library/LaunchAgents/jp.feel-physics.spacr.plist` (RunAtLoad, KeepAlive, PATH = the directory where it found `herdr`, then `~/.local/bin:/usr/local/bin:/opt/homebrew/bin` and the system paths) and loads it.
+1. Puts the resident program at `~/.local/share/recess/recess-watch.py` (python3, standard library only).
+2. Builds `~/Applications/Recess.app` on your Mac with `osacompile`, from the one line above. Nothing pre-built is downloaded. If a healthy Recess.app is already there, it is kept.
+3. Writes `~/Library/LaunchAgents/jp.feel-physics.recess.plist` (RunAtLoad, KeepAlive, PATH = the directory where it found `herdr`, then `~/.local/bin:/usr/local/bin:/opt/homebrew/bin` and the system paths) and loads it.
 4. Only with `sh install.sh --with-afplay`: puts a wrapper at `~/.local/bin/afplay` (see "The optional afplay wrapper"). Off by default.
 
 Options:
 
 - `--with-afplay`: see 4 above.
-- `--rebuild-app`: rebuild Spacr.app even if a healthy one exists. The permission may be lost (see "Known weaknesses").
-- `--fetch`: download `spacr-watch.py` even if a copy sits next to `install.sh`.
+- `--rebuild-app`: rebuild Recess.app even if a healthy one exists. The permission may be lost (see "Known weaknesses").
+- `--fetch`: download `recess-watch.py` even if a copy sits next to `install.sh`.
 - `--dry-run`: print what it would do, change nothing, no network.
 
-Running `install.sh` again without options is safe. It keeps Spacr.app, puts `spacr-watch.py` and the plist in place again, and re-registers the launchd job.
+Running `install.sh` again without options is safe. It keeps Recess.app, puts `recess-watch.py` and the plist in place again, and re-registers the launchd job.
 
-Spacr starts right away, but it cannot press space until you do the next section.
+Recess starts right away, but it cannot press space until you do the next section.
 
-## Give the permissions to Spacr.app, and to nothing else
+## Give the permissions to Recess.app, and to nothing else
 
 1. Open System Settings > Privacy & Security > Accessibility.
-2. Click "+", press Cmd+Shift+G, type `~/Applications/Spacr.app`, click Open, and turn the switch on.
-3. The first time space is pressed, macOS asks whether "Spacr" may control "System Events". Allow it. This is Automation permission, a second and separate prompt.
+2. Click "+", press Cmd+Shift+G, type `~/Applications/Recess.app`, click Open, and turn the switch on.
+3. The first time space is pressed, macOS asks whether "Recess" may control "System Events". Allow it. This is Automation permission, a second and separate prompt.
 4. Do not add python3, Terminal, iTerm or anything else.
 
 See what you just allowed:
 
 ```sh
-osadecompile ~/Applications/Spacr.app/Contents/Resources/Scripts/main.scpt
+osadecompile ~/Applications/Recess.app/Contents/Resources/Scripts/main.scpt
 ```
 
 It prints the one line.
@@ -104,7 +104,7 @@ It prints the one line.
 Try it: pause a video in the browser, run this in the terminal, and click the video within 5 seconds.
 
 ```sh
-sleep 5; open -g -W ~/Applications/Spacr.app
+sleep 5; open -g -W ~/Applications/Recess.app
 ```
 
 The video should start. If nothing happens, see "Known weaknesses" about permission after a rebuild.
@@ -121,99 +121,99 @@ Why not python3: Accessibility lets a process send any key to any app. The resid
 
 ## Settings
 
-All settings are environment variables. Put them in the `EnvironmentVariables` dict of `~/Library/LaunchAgents/jp.feel-physics.spacr.plist`, then reload:
+All settings are environment variables. Put them in the `EnvironmentVariables` dict of `~/Library/LaunchAgents/jp.feel-physics.recess.plist`, then reload:
 
 ```sh
-launchctl bootout   gui/$(id -u)/jp.feel-physics.spacr
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
+launchctl bootout   gui/$(id -u)/jp.feel-physics.recess
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.plist
 ```
 
 | Variable | Default | What it does |
 |---|---|---|
-| `SPACR_HERDR_BIN` | set by `install.sh` to the herdr it found; otherwise `herdr` on PATH | Path to the herdr binary. |
-| `SPACR_POLL_SECONDS` | `2` | How often to ask herdr. |
-| `SPACR_HANDS_OFF_SECONDS` | `3` | Hands-off time before going to the video, and before an auto jump. |
-| `SPACR_RETURN_COOLDOWN_SECONDS` | `20` | After calling you back, no video for this long. |
-| `SPACR_TERMINAL_APPS` | `iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux` | Process names counted as "terminal", space-separated. |
-| `SPACR_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | App names counted as "browser", comma-separated. Only these are remembered as the place to return the video to. |
-| `SPACR_VIDEO_APP` | (empty) | Force one browser, e.g. `Safari`. Empty = the browser you last used, Safari until then. |
-| `SPACR_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Spacr has seen you on a terminal. |
-| `SPACR_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing and switch nothing. |
+| `RECESS_HERDR_BIN` | set by `install.sh` to the herdr it found; otherwise `herdr` on PATH | Path to the herdr binary. |
+| `RECESS_POLL_SECONDS` | `2` | How often to ask herdr. |
+| `RECESS_HANDS_OFF_SECONDS` | `3` | Hands-off time before going to the video, and before an auto jump. |
+| `RECESS_RETURN_COOLDOWN_SECONDS` | `20` | After calling you back, no video for this long. |
+| `RECESS_TERMINAL_APPS` | `iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux` | Process names counted as "terminal", space-separated. |
+| `RECESS_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | App names counted as "browser", comma-separated. Only these are remembered as the place to return the video to. |
+| `RECESS_VIDEO_APP` | (empty) | Force one browser, e.g. `Safari`. Empty = the browser you last used, Safari until then. |
+| `RECESS_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Recess has seen you on a terminal. |
+| `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing and switch nothing. |
 
-A good first day: `SPACR_DRY_RUN=1`, read the log, then turn it on.
+A good first day: `RECESS_DRY_RUN=1`, read the log, then turn it on.
 
 ## Logs, stopping, removing
 
-Log: `~/.local/state/spacr/watch.log`. Most lines start with `state:` (a status summary, written when it changes), `PLAY`, `RETURN`, `TOGGLE`, `JUMP`, `WAKE`, or `remote <name>: unreachable` / `back`. launchd's own output goes to `watch.stdout.log` and `watch.stderr.log` in the same directory; look at `watch.stderr.log` when it does not start.
+Log: `~/.local/state/recess/watch.log`. Most lines start with `state:` (a status summary, written when it changes), `PLAY`, `RETURN`, `TOGGLE`, `JUMP`, `WAKE`, or `remote <name>: unreachable` / `back`. launchd's own output goes to `watch.stdout.log` and `watch.stderr.log` in the same directory; look at `watch.stderr.log` when it does not start.
 
 ```sh
-tail -f ~/.local/state/spacr/watch.log          # watch it decide
-launchctl print gui/$(id -u)/jp.feel-physics.spacr | grep state   # is it running?
+tail -f ~/.local/state/recess/watch.log          # watch it decide
+launchctl print gui/$(id -u)/jp.feel-physics.recess | grep state   # is it running?
 ```
 
 Stop (stays stopped until you bootstrap it again or log in again):
 
 ```sh
-launchctl bootout gui/$(id -u)/jp.feel-physics.spacr
+launchctl bootout gui/$(id -u)/jp.feel-physics.recess
 ```
 
 Start again:
 
 ```sh
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.plist
 ```
 
 Remove everything: `uninstall.sh` (next to `install.sh` in the repository) removes what `install.sh` put there. `--purge` also removes the logs and state, `--dry-run` only shows what it would do.
 
 ```sh
-sh uninstall.sh            # add --purge to remove ~/.local/state/spacr too
+sh uninstall.sh            # add --purge to remove ~/.local/state/recess too
 ```
 
 By hand, it is:
 
 ```sh
-launchctl bootout gui/$(id -u)/jp.feel-physics.spacr
-rm ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
-rm -r ~/.local/share/spacr ~/.local/state/spacr
-rm -r ~/Applications/Spacr.app
+launchctl bootout gui/$(id -u)/jp.feel-physics.recess
+rm ~/Library/LaunchAgents/jp.feel-physics.recess.plist
+rm -r ~/.local/share/recess ~/.local/state/recess
+rm -r ~/Applications/Recess.app
 rm ~/.local/bin/afplay      # only if you installed with --with-afplay
 ```
 
-Then remove Spacr from the Accessibility list in System Settings, and from the Automation list if it is there. ssh connection-sharing sockets (`~/.ssh/ctl-spacr-*`) close by themselves within 10 minutes.
+Then remove Recess from the Accessibility list in System Settings, and from the Automation list if it is there. ssh connection-sharing sockets (`~/.ssh/ctl-recess-*`) close by themselves within 10 minutes.
 
 ### The optional afplay wrapper
 
-herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/.local/bin/afplay`, a short shell script: if its parent process is herdr, it wakes the display (`caffeinate -u -t 2`), appends one line to `~/.local/state/spacr/sound.log` and then hands over to the real `/usr/bin/afplay`; for any other caller it just runs the real one. It only works if `~/.local/bin` comes before `/usr/bin` in the PATH of the shell that starts herdr. It is off by default because it shadows a system command.
+herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/.local/bin/afplay`, a short shell script: if its parent process is herdr, it wakes the display (`caffeinate -u -t 2`), appends one line to `~/.local/state/recess/sound.log` and then hands over to the real `/usr/bin/afplay`; for any other caller it just runs the real one. It only works if `~/.local/bin` comes before `/usr/bin` in the PATH of the shell that starts herdr. It is off by default because it shadows a system command.
 
 ## Switch it on and off
 
-Spacr keeps watching, but you decide when it may move you:
+Recess keeps watching, but you decide when it may move you:
 
 ```sh
-spacr status    # ON or OFF
-spacr off       # watch only. No browser trips, no call-backs
-spacr on        # back to normal
-spacr toggle
+recess status    # ON or OFF
+recess off       # watch only. No browser trips, no call-backs
+recess on        # back to normal
+recess toggle
 ```
 
-`spacr` is a symlink in `~/.local/bin`. The same switch is registered as a herdr plugin, so you can bind it to a key or run it from herdr:
+`recess` is a symlink in `~/.local/bin`. The same switch is registered as a herdr plugin, so you can bind it to a key or run it from herdr:
 
 ```sh
-herdr plugin action invoke spacr.toggle   # also spacr.on / spacr.off / spacr.status
+herdr plugin action invoke recess.toggle   # also recess.on / recess.off / recess.status
 ```
 
 
 ## Known weaknesses
 
-- Space is a toggle. Pause or play by hand and the next press goes the wrong way. Spacr never reads playback state; keep the video paused while you are at the terminal.
+- Space is a toggle. Pause or play by hand and the next press goes the wrong way. Recess never reads playback state; keep the video paused while you are at the terminal.
 - Tried with Safari and Netflix only. Other sites or players may not bind space to play/pause, or may not have the video focused.
 - "Browser is frontmost" does not mean "right tab, video focused". If a text field or another tab has focus, space goes there.
-- Rebuilding Spacr.app (`sh install.sh --rebuild-app`, or a re-run that finds the app broken or built by an older `install.sh`; otherwise a plain re-run keeps it) can invalidate the permission. Remove Spacr from the Accessibility list and add it again; if it is still refused, quit System Settings, open it again, and repeat. On the author's Mac, macOS had stored the permission by path but checked the identity of the new build.
+- Rebuilding Recess.app (`sh install.sh --rebuild-app`, or a re-run that finds the app broken or built by an older `install.sh`; otherwise a plain re-run keeps it) can invalidate the permission. Remove Recess from the Accessibility list and add it again; if it is still refused, quit System Settings, open it again, and repeat. On the author's Mac, macOS had stored the permission by path but checked the identity of the new build.
 - Tried only on macOS 14.3.1 with herdr 0.9.1 and iTerm2, on one Mac. No one has run it anywhere else yet.
 - If you are called back while in an app that is neither a terminal nor a browser (Finder, an editor), it still brings the browser forward and presses space.
 - It can take you to the video while you are thinking with your hands off the keys, as long as an agent in the tab you look at is `working`.
 - A remote machine that stops answering keeps its last known state. It is not treated as gone.
-- On a remote machine, `herdr agent list` runs in a non-interactive shell. If `~/.local/bin` is not on PATH there, the machine is silently treated as unreachable and Spacr watches this Mac only. The log line `remote <name>: unreachable` is the only sign.
+- On a remote machine, `herdr agent list` runs in a non-interactive shell. If `~/.local/bin` is not on PATH there, the machine is silently treated as unreachable and Recess watches this Mac only. The log line `remote <name>: unreachable` is the only sign.
 - While an `enabled` machine is down, one polling round can stretch to 5 seconds per such machine (ssh connect timeout).
 - Hands-off time comes from this Mac's input devices. Typing over ssh from a phone does not count as hands; the auto jump checks `who` for that, the switch to the video does not.
 - On a slow ssh link, a call from a remote machine arrives as late as the next `herdr agent list` does.
@@ -232,22 +232,22 @@ MIT. See [LICENSE](LICENSE).
 
 ---
 
-# Spacr（日本語）
+# Recess（日本語）
 
 AI エージェントが働いている間はブラウザで動画を流し、呼ばれたら動画を止めてターミナルへ戻す。
 
-Spacr は、Mac のターミナルで [herdr](https://herdr.dev) を使って AI コーディングエージェントを動かしている人のためのものです。名前は、この仕組みの中で唯一許可が要る部分、スペースキーを押すだけの小さなアプリから来ています。
+Recess は、Mac のターミナルで [herdr](https://herdr.dev) を使って AI コーディングエージェントを動かしている人のためのものです。名前は、この仕組みの中で唯一許可が要る部分、スペースキーを押すだけの小さなアプリから来ています。
 
 ## 何が起きるか
 
-Spacr は常駐プログラム（Python ファイル1つ。launchd が動かす）で、2秒おきに herdr へ「エージェントはいま何をしているか」を聞きます。この Mac と、herdr に登録した他のマシンの両方です。そして、作者が引いた3本の線に従います。線は少し動かせます（「設定」を見てください）。いまのところ、線は一晩持っています。
+Recess は常駐プログラム（Python ファイル1つ。launchd が動かす）で、2秒おきに herdr へ「エージェントはいま何をしているか」を聞きます。この Mac と、herdr に登録した他のマシンの両方です。そして、作者が引いた3本の線に従います。線は少し動かせます（「設定」を見てください）。いまのところ、線は一晩持っています。
 
 ### 線1 任せる範囲
 
 - 常駐プログラム自身には特別な許可がありません。動かすのは `herdr`, `ssh`, `open`, `lsappinfo`, `ioreg`, `who`, `caffeinate` だけ。どれもアクセシビリティ許可もオートメーション許可も要りません。`osascript` は使いません。
 - 他のマシンには、手元にある ssh 鍵を使って `herdr agent list` を実行しに行きます（`herdr machine list` で `enabled` のマシン）。接続は使い回すので、2秒ごとに新しいログインが起きるわけではありません。
-- 許可が要る唯一の動作、キーを送ることは、別のアプリ `~/Applications/Spacr.app` がやります。スクリプトは AppleScript 1行だけ：`tell application "System Events" to key code 49`（49 はスペースキー）。`osadecompile` で確認できます。その1行のまわりに、`install.sh` が識別子（`jp.feel-physics.Spacr`）を付け、Dock に出ないようにし、ad-hoc 署名をします。常駐プログラムにできるのは、このアプリを起動することだけ。中身を変えることはできません。
-- 許可は2つ、どちらも Spacr.app にだけ出します。アクセシビリティ（手で追加する）と、System Events を制御するオートメーション（初めてスペースが送られるときのダイアログ）です。python3 にもターミナルにも出しません。
+- 許可が要る唯一の動作、キーを送ることは、別のアプリ `~/Applications/Recess.app` がやります。スクリプトは AppleScript 1行だけ：`tell application "System Events" to key code 49`（49 はスペースキー）。`osadecompile` で確認できます。その1行のまわりに、`install.sh` が識別子（`jp.feel-physics.Recess`）を付け、Dock に出ないようにし、ad-hoc 署名をします。常駐プログラムにできるのは、このアプリを起動することだけ。中身を変えることはできません。
+- 許可は2つ、どちらも Recess.app にだけ出します。アクセシビリティ（手で追加する）と、System Events を制御するオートメーション（初めてスペースが送られるときのダイアログ）です。python3 にもターミナルにも出しません。
 
 ### 線2 呼ばれる時機
 
@@ -271,7 +271,7 @@ Spacr は常駐プログラム（Python ファイル1つ。launchd が動かす�
 - 2秒前には無かった `blocked` か `done` が、どこかのマシンに現れた
 - 見ているタブのペインが `working` から `idle` になった（見ている最中に終わると herdr は `done` を飛ばします）
 
-このとき、画面を点け、ターミナルを見ていなければスペースを1回、0.3秒待ってターミナルを前に出します。すでにターミナルを見ていれば何も押しません。Spacr が起動したときに既にあった `blocked` / `done` では呼びません。
+このとき、画面を点け、ターミナルを見ていなければスペースを1回、0.3秒待ってターミナルを前に出します。すでにターミナルを見ていれば何も押しません。Recess が起動したときに既にあった `blocked` / `done` では呼びません。
 
 もう1つ：この Mac のペインが `done` になり、手を離して3秒以上、ssh ログイン（スマホなど）が無ければ、`herdr agent focus` でそのペインへ飛びます。
 
@@ -279,54 +279,54 @@ Spacr は常駐プログラム（Python ファイル1つ。launchd が動かす�
 
 スペース1回、0.3秒、ターミナル。戻り道はこれだけです。
 
-スペースは切り替えです。Spacr は動画が再生中かどうかを知りません。状態が変わった瞬間に1回キーを送るだけで、ターミナルにいる間は動画が止まっていたと信じています。それが Spacr との約束です：ターミナルにいるとき、動画は止めておく。
+スペースは切り替えです。Recess は動画が再生中かどうかを知りません。状態が変わった瞬間に1回キーを送るだけで、ターミナルにいる間は動画が止まっていたと信じています。それが Recess との約束です：ターミナルにいるとき、動画は止めておく。
 
 ## 導入
 
 2行です。落として、読んで、実行する。curl を sh へパイプしないでください。
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
+curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh
 sh install.sh
 ```
 
-ソースと導入ファイルの正本は GitHub です。`spacr.feel-physics.jp` が開通したら、同じものがそこにも出ます：
+ソースと導入ファイルの正本は GitHub です。`recess.feel-physics.jp` が開通したら、同じものがそこにも出ます：
 
 ```sh
-curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
+curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh
 ```
 
-`install.sh` は実行時に常駐本体 `spacr-watch.py` も取得します（同じホストから。落ちていれば GitHub から）。隣に同じファイルが置いてあればそれを使います。読んでから実行したい人は両方を読んでください。GitHub に同じものがあります。
+`install.sh` は実行時に常駐本体 `recess-watch.py` も取得します（同じホストから。落ちていれば GitHub から）。隣に同じファイルが置いてあればそれを使います。読んでから実行したい人は両方を読んでください。GitHub に同じものがあります。
 
 `install.sh` は sudo 不要で、やることは4つ：
 
-1. 常駐プログラムを `~/.local/share/spacr/spacr-watch.py` に置く（python3 標準ライブラリのみ）。
-2. 上の1行から、あなたの Mac 上で `osacompile` を使って `~/Applications/Spacr.app` を作る。ビルド済みのものは落としません。壊れていない Spacr.app が既にあれば、そのまま残します。
-3. `~/Library/LaunchAgents/jp.feel-physics.spacr.plist` を書いて読み込む（RunAtLoad, KeepAlive, PATH は `herdr` が見つかったフォルダ、続けて `~/.local/bin:/usr/local/bin:/opt/homebrew/bin` とシステムのパス）。
+1. 常駐プログラムを `~/.local/share/recess/recess-watch.py` に置く（python3 標準ライブラリのみ）。
+2. 上の1行から、あなたの Mac 上で `osacompile` を使って `~/Applications/Recess.app` を作る。ビルド済みのものは落としません。壊れていない Recess.app が既にあれば、そのまま残します。
+3. `~/Library/LaunchAgents/jp.feel-physics.recess.plist` を書いて読み込む（RunAtLoad, KeepAlive, PATH は `herdr` が見つかったフォルダ、続けて `~/.local/bin:/usr/local/bin:/opt/homebrew/bin` とシステムのパス）。
 4. `sh install.sh --with-afplay` のときだけ、`~/.local/bin/afplay` にラッパーを置く（「任意の afplay ラッパー」を参照）。既定では入れません。
 
 オプション：
 
 - `--with-afplay`：上の4。
-- `--rebuild-app`：壊れていない Spacr.app があっても作り直す。許可が外れることがあります（「分かっている弱点」を参照）。
-- `--fetch`：`install.sh` の隣に `spacr-watch.py` があっても使わず、取得元から取り直す。
+- `--rebuild-app`：壊れていない Recess.app があっても作り直す。許可が外れることがあります（「分かっている弱点」を参照）。
+- `--fetch`：`install.sh` の隣に `recess-watch.py` があっても使わず、取得元から取り直す。
 - `--dry-run`：何をするかだけ表示して、何も変えない。通信もしない。
 
-オプション無しで `install.sh` をもう一度走らせても大丈夫です。Spacr.app は残し、`spacr-watch.py` と plist を置き直して、launchd の登録をやり直します。
+オプション無しで `install.sh` をもう一度走らせても大丈夫です。Recess.app は残し、`recess-watch.py` と plist を置き直して、launchd の登録をやり直します。
 
-Spacr はすぐ動き始めますが、次の節をやるまでスペースは押せません。
+Recess はすぐ動き始めますが、次の節をやるまでスペースは押せません。
 
-## 許可を Spacr.app にだけ出す
+## 許可を Recess.app にだけ出す
 
 1. システム設定 > プライバシーとセキュリティ > アクセシビリティ を開く。
-2. 「+」を押し、Cmd+Shift+G で `~/Applications/Spacr.app` と入力して「開く」。スイッチをオンにする。
-3. 初めてスペースが送られるとき、macOS が「"Spacr" が "System Events" を制御することを許可しますか」と聞いてきます。許可してください。これはオートメーション許可で、アクセシビリティとは別の2つ目のダイアログです。
+2. 「+」を押し、Cmd+Shift+G で `~/Applications/Recess.app` と入力して「開く」。スイッチをオンにする。
+3. 初めてスペースが送られるとき、macOS が「"Recess" が "System Events" を制御することを許可しますか」と聞いてきます。許可してください。これはオートメーション許可で、アクセシビリティとは別の2つ目のダイアログです。
 4. python3、ターミナル、iTerm など、他のものは追加しない。
 
 いま許可したものの中身を見る：
 
 ```sh
-osadecompile ~/Applications/Spacr.app/Contents/Resources/Scripts/main.scpt
+osadecompile ~/Applications/Recess.app/Contents/Resources/Scripts/main.scpt
 ```
 
 1行だけ表示されます。
@@ -334,7 +334,7 @@ osadecompile ~/Applications/Spacr.app/Contents/Resources/Scripts/main.scpt
 試す：ブラウザで動画を止めておき、ターミナルでこれを実行して、5秒以内に動画をクリックする。
 
 ```sh
-sleep 5; open -g -W ~/Applications/Spacr.app
+sleep 5; open -g -W ~/Applications/Recess.app
 ```
 
 動画が動き出すはずです。何も起きなければ「分かっている弱点」の、作り直し後の許可の項を見てください。
@@ -351,94 +351,94 @@ sleep 5; open -g -W ~/Applications/Spacr.app
 
 ## 設定（環境変数）
 
-設定はすべて環境変数です。`~/Library/LaunchAgents/jp.feel-physics.spacr.plist` の `EnvironmentVariables` に書いて、載せ直します：
+設定はすべて環境変数です。`~/Library/LaunchAgents/jp.feel-physics.recess.plist` の `EnvironmentVariables` に書いて、載せ直します：
 
 ```sh
-launchctl bootout   gui/$(id -u)/jp.feel-physics.spacr
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
+launchctl bootout   gui/$(id -u)/jp.feel-physics.recess
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.plist
 ```
 
 | 変数 | 既定 | 意味 |
 |---|---|---|
-| `SPACR_HERDR_BIN` | `install.sh` が見つけた herdr の場所。無ければ PATH 上の `herdr` | herdr 実行ファイルの場所。 |
-| `SPACR_POLL_SECONDS` | `2` | herdr に聞く間隔（秒）。 |
-| `SPACR_HANDS_OFF_SECONDS` | `3` | 動画へ行く前、および自動ジャンプの前に、手を離して待つ秒数。 |
-| `SPACR_RETURN_COOLDOWN_SECONDS` | `20` | 呼び戻したあと、この秒数は動画へ行かない。 |
-| `SPACR_TERMINAL_APPS` | `iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux` | 「ターミナル」とみなすプロセス名。空白区切り。 |
-| `SPACR_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | 「ブラウザ」とみなすアプリ名。カンマ区切り。動画の戻り先として覚えるのはこれらだけ。 |
-| `SPACR_VIDEO_APP` | （空） | ブラウザを決め打ちする（例 `Safari`）。空なら最後に使ったブラウザ、それまでは Safari。 |
-| `SPACR_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
-| `SPACR_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず何も切り替えない。 |
+| `RECESS_HERDR_BIN` | `install.sh` が見つけた herdr の場所。無ければ PATH 上の `herdr` | herdr 実行ファイルの場所。 |
+| `RECESS_POLL_SECONDS` | `2` | herdr に聞く間隔（秒）。 |
+| `RECESS_HANDS_OFF_SECONDS` | `3` | 動画へ行く前、および自動ジャンプの前に、手を離して待つ秒数。 |
+| `RECESS_RETURN_COOLDOWN_SECONDS` | `20` | 呼び戻したあと、この秒数は動画へ行かない。 |
+| `RECESS_TERMINAL_APPS` | `iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux` | 「ターミナル」とみなすプロセス名。空白区切り。 |
+| `RECESS_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | 「ブラウザ」とみなすアプリ名。カンマ区切り。動画の戻り先として覚えるのはこれらだけ。 |
+| `RECESS_VIDEO_APP` | （空） | ブラウザを決め打ちする（例 `Safari`）。空なら最後に使ったブラウザ、それまでは Safari。 |
+| `RECESS_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
+| `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず何も切り替えない。 |
 
-最初の1日は `SPACR_DRY_RUN=1` でログだけ読み、それから本番にするのがおすすめです。
+最初の1日は `RECESS_DRY_RUN=1` でログだけ読み、それから本番にするのがおすすめです。
 
 ## ログと止め方・削除
 
-ログ：`~/.local/state/spacr/watch.log`。行頭はおもに `state:`（状態の要約。変わったときだけ書く）、`PLAY`、`RETURN`、`TOGGLE`、`JUMP`、`WAKE`、`remote <名前>: unreachable` / `back` のどれかです。launchd 自身の出力は同じフォルダの `watch.stdout.log` と `watch.stderr.log` に出ます。起動しないときは `watch.stderr.log` を見てください。
+ログ：`~/.local/state/recess/watch.log`。行頭はおもに `state:`（状態の要約。変わったときだけ書く）、`PLAY`、`RETURN`、`TOGGLE`、`JUMP`、`WAKE`、`remote <名前>: unreachable` / `back` のどれかです。launchd 自身の出力は同じフォルダの `watch.stdout.log` と `watch.stderr.log` に出ます。起動しないときは `watch.stderr.log` を見てください。
 
 ```sh
-tail -f ~/.local/state/spacr/watch.log          # 判断を眺める
-launchctl print gui/$(id -u)/jp.feel-physics.spacr | grep state   # 動いているか
+tail -f ~/.local/state/recess/watch.log          # 判断を眺める
+launchctl print gui/$(id -u)/jp.feel-physics.recess | grep state   # 動いているか
 ```
 
 止める（載せ直すか、次にログインするまで止まったまま）：
 
 ```sh
-launchctl bootout gui/$(id -u)/jp.feel-physics.spacr
+launchctl bootout gui/$(id -u)/jp.feel-physics.recess
 ```
 
 動かす：
 
 ```sh
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.plist
 ```
 
 全部消す：リポジトリで `install.sh` の隣にある `uninstall.sh` が、`install.sh` の置いたものを外します。`--purge` を付けるとログと状態も消し、`--dry-run` は何をするかを表示するだけです。
 
 ```sh
-sh uninstall.sh            # ~/.local/state/spacr も消すなら --purge
+sh uninstall.sh            # ~/.local/state/recess も消すなら --purge
 ```
 
 手で消すなら：
 
 ```sh
-launchctl bootout gui/$(id -u)/jp.feel-physics.spacr
-rm ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
-rm -r ~/.local/share/spacr ~/.local/state/spacr
-rm -r ~/Applications/Spacr.app
+launchctl bootout gui/$(id -u)/jp.feel-physics.recess
+rm ~/Library/LaunchAgents/jp.feel-physics.recess.plist
+rm -r ~/.local/share/recess ~/.local/state/recess
+rm -r ~/Applications/Recess.app
 rm ~/.local/bin/afplay      # --with-afplay で入れたときだけ
 ```
 
-そのあと、システム設定のアクセシビリティ一覧から Spacr を外してください。オートメーション一覧に残っていればそれも外します。ssh の接続共有ソケット（`~/.ssh/ctl-spacr-*`）は10分以内に勝手に閉じます。
+そのあと、システム設定のアクセシビリティ一覧から Recess を外してください。オートメーション一覧に残っていればそれも外します。ssh の接続共有ソケット（`~/.ssh/ctl-recess-*`）は10分以内に勝手に閉じます。
 
 ### 任意の afplay ラッパー
 
-herdr はエージェントが終わったときと質問したときに音を鳴らします。`--with-afplay` は `~/.local/bin/afplay` に短いシェルスクリプトを置きます。親プロセスが herdr なら画面を点け（`caffeinate -u -t 2`）、`~/.local/state/spacr/sound.log` に1行書いてから本物の `/usr/bin/afplay` へ渡し、それ以外の呼び出し元なら本物をそのまま実行するだけです。herdr を起動するシェルの PATH で `~/.local/bin` が `/usr/bin` より前にあるときだけ効きます。システムのコマンドを覆い隠すので、既定では入れません。
+herdr はエージェントが終わったときと質問したときに音を鳴らします。`--with-afplay` は `~/.local/bin/afplay` に短いシェルスクリプトを置きます。親プロセスが herdr なら画面を点け（`caffeinate -u -t 2`）、`~/.local/state/recess/sound.log` に1行書いてから本物の `/usr/bin/afplay` へ渡し、それ以外の呼び出し元なら本物をそのまま実行するだけです。herdr を起動するシェルの PATH で `~/.local/bin` が `/usr/bin` より前にあるときだけ効きます。システムのコマンドを覆い隠すので、既定では入れません。
 
 ## ON と OFF の切り替え
 
 常駐は動いたまま、連れ出しと呼び戻しだけを止められます。
 
 ```sh
-spacr status    # ON か OFF か
-spacr off       # 見張るだけ。ブラウザへ行かず、呼び戻しもしない
-spacr on        # 元に戻す
-spacr toggle
+recess status    # ON か OFF か
+recess off       # 見張るだけ。ブラウザへ行かず、呼び戻しもしない
+recess on        # 元に戻す
+recess toggle
 ```
 
-`spacr` は `~/.local/bin` のシンボリックリンクです。同じ切り替えが herdr のプラグインとしても登録されるので、herdr から実行したりキーに割り当てたりできます。
+`recess` は `~/.local/bin` のシンボリックリンクです。同じ切り替えが herdr のプラグインとしても登録されるので、herdr から実行したりキーに割り当てたりできます。
 
 ```sh
-herdr plugin action invoke spacr.toggle   # spacr.on / spacr.off / spacr.status も同じ
+herdr plugin action invoke recess.toggle   # recess.on / recess.off / recess.status も同じ
 ```
 
 
 ## 分かっている弱点
 
-- スペースは切り替えです。手で止めたり再生したりすると、次の1回が逆に効きます。Spacr は再生状態を読みません。ターミナルにいる間は動画を止めておいてください。
+- スペースは切り替えです。手で止めたり再生したりすると、次の1回が逆に効きます。Recess は再生状態を読みません。ターミナルにいる間は動画を止めておいてください。
 - 確かめたのは Safari と Netflix だけ。他のサイトやプレーヤーではスペースが再生／停止に割り当てられていなかったり、動画にフォーカスが無かったりします。
 - 「ブラウザが最前面」は「正しいタブで動画にフォーカスがある」と同じではありません。文字入力欄や別のタブにフォーカスがあれば、スペースはそこへ行きます。
-- Spacr.app を作り直す（`sh install.sh --rebuild-app`。再実行で app が壊れているか古い版と分かったときも作り直します。それ以外のただの再実行では作り直しません）と、許可が外れることがあります。アクセシビリティ一覧から Spacr を削除して追加し直してください。それでも拒否されるときは、システム設定を終了してもう一度開き、同じことを繰り返します。作者の Mac では、macOS が許可をパスで記録しつつ、新しいビルドの識別を照合していました。
+- Recess.app を作り直す（`sh install.sh --rebuild-app`。再実行で app が壊れているか古い版と分かったときも作り直します。それ以外のただの再実行では作り直しません）と、許可が外れることがあります。アクセシビリティ一覧から Recess を削除して追加し直してください。それでも拒否されるときは、システム設定を終了してもう一度開き、同じことを繰り返します。作者の Mac では、macOS が許可をパスで記録しつつ、新しいビルドの識別を照合していました。
 - 確かめたのは macOS 14.3.1、herdr 0.9.1、iTerm2、Mac 1台だけ。それ以外で動かした人はまだいません。
 - ターミナルでもブラウザでもないアプリ（Finder やエディタ）を見ているときに呼び戻されると、それでもブラウザを前に出してスペースを押します。
 - 見ているタブの AI が `working` なら、手を離して考えごとをしている最中でも動画へ連れて行かれることがあります。

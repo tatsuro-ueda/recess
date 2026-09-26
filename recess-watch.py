@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Spacr — AI が働いている間はブラウザの動画を再生し、呼ばれたら止めてターミナルへ戻る常駐。
+"""Recess — AI が働いている間はブラウザの動画を再生し、呼ばれたら止めてターミナルへ戻る常駐。
 
-名前の由来: 「スペースキーを1回押すだけの小さなアプリ（Spacr.app）」。
+名前の由来: 「スペースキーを1回押すだけの小さなアプリ（Recess.app）」。
 このファイルは AI（Claude）に書かせ、判断は作者（植田）がした。
 
 何をするか
@@ -11,7 +11,7 @@
              あるペイン全部（herdr の tab_id で束ねる。同じタブの2ペインは一体で判断する）。
   待ち時間 : 見ているタブのどれかの AI が working で、そのタブに読み中（reading）のペインが無く、
              blocked/done がどこにも無く、手を離して HANDS_OFF 秒、最前面がターミナルのとき
-             → 最後に見ていたブラウザ（既定 Safari）を前に出し、Spacr.app でスペース1回（再生）。
+             → 最後に見ていたブラウザ（既定 Safari）を前に出し、Recess.app でスペース1回（再生）。
              idle は「次を打つ準備」なので行かない。
   呼ばれた : どこかに blocked(ask) / done(stop・未読) が新しく現れた、または見ているタブのペインが
              working→idle になったとき → 画面を点け、最前面がブラウザならスペース1回（一時停止）
@@ -23,7 +23,7 @@
              （手を離して HANDS_OFF 秒以上、who に SSH ログインが無いとき）。
 
 権限
-  スペースを押すのは ~/Applications/Spacr.app（中身は key code 49 の1行）だけ。
+  スペースを押すのは ~/Applications/Recess.app（中身は key code 49 の1行）だけ。
   アクセシビリティ許可と、System Events を制御するオートメーション許可は、このアプリにだけ出す。
   python3 には出さない。
   この常駐が Mac 側で使う道具は権限不要のものだけ: open, lsappinfo, caffeinate, ioreg, who
@@ -33,9 +33,9 @@
 分かっている弱点（正直に書く）
   ・スペースは「切り替え」で、再生中かどうかを持たない。ターミナルにいるときは動画を止めておく約束。
   ・Safari＋Netflix でしか確かめていない。
-  ・Spacr.app を作り直す（install.sh --rebuild-app。壊れているか古い版なら再実行でも作り直す）と
+  ・Recess.app を作り直す（install.sh --rebuild-app。壊れているか古い版なら再実行でも作り直す）と
     許可が外れることがある（システム設定で削除→追加し直し）。
-    Spacr.app が無いときは「cannot open」をログに残してスキップするだけで、落ちはしない。
+    Recess.app が無いときは「cannot open」をログに残してスキップするだけで、落ちはしない。
   ・macOS 14.3.1 と herdr 0.9.1 でしか確かめていない。
   ・作者の Mac 以外で動かした実績はまだ無い。
   ・他マシンでは非対話シェルで `herdr agent list` を実行する。相手の PATH に ~/.local/bin が無いと
@@ -45,9 +45,9 @@
   ・タブ束ねは `herdr agent list` の tab_id を使う。tab_id を返さない herdr では、ペイン1つずつの判定に戻る。
 
 置き場
-  本体   : ~/.local/share/spacr/spacr-watch.py（python3 標準ライブラリのみ）
-  状態   : ~/.local/state/spacr/（watch.log ほか）
-  launchd: ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
+  本体   : ~/.local/share/recess/recess-watch.py（python3 標準ライブラリのみ）
+  状態   : ~/.local/state/recess/（watch.log ほか）
+  launchd: ~/Library/LaunchAgents/jp.feel-physics.recess.plist
            ProgramArguments は install.sh が見つけた python3（通常 /usr/bin/python3）を絶対パスで書き、
            EnvironmentVariables の PATH に ~/.local/bin と herdr のフォルダを入れる（launchd の既定 PATH には無い）。
            KeepAlive は SuccessfulExit=false（異常終了のときだけ再起動）、ThrottleInterval 5 で、落ちても5秒後に戻る。
@@ -55,17 +55,17 @@
            先に旧いほうを launchctl bootout してから load する。
 
 環境変数（すべて任意。数値が壊れていたら既定へ戻し、起動は止めない）
-  SPACR_HERDR_BIN               herdr の場所（既定: PATH から探す → ~/.local/bin/herdr）
-  SPACR_POLL_SECONDS            状態を集める間隔（既定 2）
-  SPACR_HANDS_OFF_SECONDS       「手を離した」とみなす秒数（既定 3）
-  SPACR_RETURN_COOLDOWN_SECONDS 呼び戻し後にブラウザへ行かない秒数（既定 0。行き来が気になるときだけ 5 など）
-  SPACR_TERMINAL_APPS           ターミナルとみなすプロセス名。空白区切り
+  RECESS_HERDR_BIN               herdr の場所（既定: PATH から探す → ~/.local/bin/herdr）
+  RECESS_POLL_SECONDS            状態を集める間隔（既定 2）
+  RECESS_HANDS_OFF_SECONDS       「手を離した」とみなす秒数（既定 3）
+  RECESS_RETURN_COOLDOWN_SECONDS 呼び戻し後にブラウザへ行かない秒数（既定 0。行き来が気になるときだけ 5 など）
+  RECESS_TERMINAL_APPS           ターミナルとみなすプロセス名。空白区切り
                                 （既定 "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux"）
-  SPACR_BROWSER_APPS            ブラウザとみなすアプリ名。名前に空白を含むのでカンマ区切り
+  RECESS_BROWSER_APPS            ブラウザとみなすアプリ名。名前に空白を含むのでカンマ区切り
                                 （既定 "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge"）
-  SPACR_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
-  SPACR_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
-  SPACR_DRY_RUN=1               判定だけ行い、open / caffeinate / focus を実行しない
+  RECESS_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
+  RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
+  RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus を実行しない
 
 状態は毎回の差分（前回→今回）で見る。
 """
@@ -78,8 +78,8 @@ import subprocess
 import time
 
 HOME = os.path.expanduser("~")
-STATE_DIR = os.path.join(HOME, ".local/state/spacr")
-OFF_FILE = os.path.join(STATE_DIR, "off")   # これがあるとき Spacr は OFF（状態は追うが、連れ出し・呼び戻し・ジャンプをしない）。spacr on/off で切り替える
+STATE_DIR = os.path.join(HOME, ".local/state/recess")
+OFF_FILE = os.path.join(STATE_DIR, "off")   # これがあるとき Recess は OFF（状態は追うが、連れ出し・呼び戻し・ジャンプをしない）。recess on/off で切り替える
 LOG = os.path.join(STATE_DIR, "watch.log")
 
 
@@ -113,17 +113,17 @@ def env_number(name, default, cast):
         return default
 
 
-HERDR = (os.environ.get("SPACR_HERDR_BIN")
+HERDR = (os.environ.get("RECESS_HERDR_BIN")
          or shutil.which("herdr")
          or os.path.join(HOME, ".local/bin/herdr"))
-POLL = env_number("SPACR_POLL_SECONDS", 2.0, float)
-HANDS_OFF = env_number("SPACR_HANDS_OFF_SECONDS", 3, int)
-RETURN_COOLDOWN = env_number("SPACR_RETURN_COOLDOWN_SECONDS", 0, int)  # 呼び戻し後、次にブラウザへ行くまでの最短秒数（既定0。必要なら環境変数で）
+POLL = env_number("RECESS_POLL_SECONDS", 2.0, float)
+HANDS_OFF = env_number("RECESS_HANDS_OFF_SECONDS", 3, int)
+RETURN_COOLDOWN = env_number("RECESS_RETURN_COOLDOWN_SECONDS", 0, int)  # 呼び戻し後、次にブラウザへ行くまでの最短秒数（既定0。必要なら環境変数で）
 TERMINAL_APPS = set(os.environ.get(
-    "SPACR_TERMINAL_APPS", "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux").split())
+    "RECESS_TERMINAL_APPS", "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux").split())
 REMOTE_STALE = 30          # 秒。取得に失敗した他マシンの状態を、この間は前回の値で持ちこたえる
-DRY_RUN = os.environ.get("SPACR_DRY_RUN") == "1"
-SSH_CTL = os.path.join(HOME, ".ssh", "ctl-spacr-%C")
+DRY_RUN = os.environ.get("RECESS_DRY_RUN") == "1"
+SSH_CTL = os.path.join(HOME, ".ssh", "ctl-recess-%C")
 
 try:
     os.makedirs(STATE_DIR, exist_ok=True)
@@ -210,9 +210,9 @@ def wake(reason):
             log(f"WAKE  caffeinate failed: {e!r}")
 
 
-VIDEO_APP_FIXED = os.environ.get("SPACR_VIDEO_APP", "")     # 決め打ちしたいときだけ指定（例 Safari / Comet）
+VIDEO_APP_FIXED = os.environ.get("RECESS_VIDEO_APP", "")     # 決め打ちしたいときだけ指定（例 Safari / Comet）
 BROWSER_APPS = {name.strip() for name in os.environ.get(
-    "SPACR_BROWSER_APPS", "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge").split(",")
+    "RECESS_BROWSER_APPS", "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge").split(",")
     if name.strip()}
 LAST_OTHER_APP = {"name": "Safari"}                        # 最後に見ていたブラウザ（既定 Safari）
 
@@ -221,14 +221,14 @@ def video_app():
     return VIDEO_APP_FIXED or LAST_OTHER_APP["name"]
 
 
-SPACE_APP = os.path.join(HOME, "Applications", "Spacr.app")
-LAST_TERMINAL = {"name": os.environ.get("SPACR_DEFAULT_TERMINAL", "iTerm")}   # open -a に渡す名前。プロセス名 iTerm2 → アプリ名 iTerm
+SPACE_APP = os.path.join(HOME, "Applications", "Recess.app")
+LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   # open -a に渡す名前。プロセス名 iTerm2 → アプリ名 iTerm
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 
 def toggle_video(why):
     """権限不要の open で前面化を確認し、専用アプリからスペースを1回送る。"""
-    # Python は open / lsappinfo だけを使う。キー送信の権限は Spacr.app が持つ。
+    # Python は open / lsappinfo だけを使う。キー送信の権限は Recess.app が持つ。
     target = video_app()
     rc, _, err = run(["open", "-a", target], timeout=5)
     if rc != 0:

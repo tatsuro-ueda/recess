@@ -1,5 +1,5 @@
-id = "spacr"
-name = "Spacr"
+id = "recess"
+name = "Recess"
 version = "0.1.0"
 min_herdr_version = "0.9.0"
 description = "AI agent works, you watch. ON/OFF を herdr のアクションで切り替える（常駐は launchd）"
@@ -7,24 +7,24 @@ platforms = ["macos"]
 
 [[actions]]
 id = "on"
-title = "Spacr ON"
+title = "Recess ON"
 contexts = ["workspace"]
-command = ["sh", "spacr-mode.sh", "on"]
+command = ["sh", "recess-mode.sh", "on"]
 
 [[actions]]
 id = "off"
-title = "Spacr OFF"
+title = "Recess OFF"
 contexts = ["workspace"]
-command = ["sh", "spacr-mode.sh", "off"]
+command = ["sh", "recess-mode.sh", "off"]
 
 [[actions]]
 id = "toggle"
-title = "Spacr ON/OFF toggle"
+title = "Recess ON/OFF toggle"
 contexts = ["workspace"]
-command = ["sh", "spacr-mode.sh", "toggle"]
+command = ["sh", "recess-mode.sh", "toggle"]
 
 [[actions]]
 id = "status"
-title = "Spacr status"
+title = "Recess status"
 contexts = ["workspace"]
-command = ["sh", "spacr-mode.sh", "status"]
+command = ["sh", "recess-mode.sh", "status"]

@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Spacr</title>
+<title>Recess</title>
 <meta name="description" content="AI エージェントが働いている間は Netflix を再生し、呼ばれたら止めてターミナルへ戻す、Mac 用の小さな常駐。">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Spacr">
+<meta property="og:title" content="Recess">
 <meta property="og:description" content="AI エージェントが働いている間は Netflix を再生し、呼ばれたら止めてターミナルへ戻す、Mac 用の小さな常駐。">
-<meta property="og:url" content="https://spacr.feel-physics.jp/">
-<meta property="og:site_name" content="Spacr">
+<meta property="og:url" content="https://recess.feel-physics.jp/">
+<meta property="og:site_name" content="Recess">
 <meta name="twitter:card" content="summary">
 <style>
   /* 色は :root のトークンで定義し、ダークモードで差し替える */
@@ -144,9 +144,9 @@
 <body>
 <main>
   <header>
-    <p class="brand">Spacr</p>
+    <p class="brand">Recess</p>
     <h1>AI が働いている間は Netflix。呼ばれたら止めて、ターミナルへ戻る。</h1>
-    <p>Spacr は、AI エージェントが作業を進めている間は Safari で Netflix を再生し、AI から質問か完了の知らせが来たら再生を止めてターミナルを前に出す、Mac 用の小さな常駐です。herdr で AI エージェントを回している人向けです。</p>
+    <p>Recess は、AI エージェントが作業を進めている間は Safari で Netflix を再生し、AI から質問か完了の知らせが来たら再生を止めてターミナルを前に出す、Mac 用の小さな常駐です。herdr で AI エージェントを回している人向けです。</p>
     <div class="claim">
       <p>AI は道具だ。任せる範囲、呼ばれる時機、戻り方の3本の線を自分で引いたら、AI が夜の作業を進めている横で、Netflix をまったく見なかった私が Netflix を楽しんでいた。道具として使って楽しみが増えた。</p>
     </div>
@@ -156,32 +156,32 @@
   <h2>3本の線</h2>
 
   <h3>線1 任せる範囲</h3>
-  <p>私が見ていない間も動く常駐に、鍵は渡さない。キー1回分の1行アプリ（Spacr.app）にだけ、アクセシビリティの許可と、System Events を制御するオートメーションの許可を出した。python3 には出していない。「python3 に許可を与えるのはちょっと怖い」が理由で、Safari の設定も変えていない。ただし、herdr に登録した他のマシンの状態は、常駐が手元の ssh 鍵で読みに行く。いっぽうで AI 本体には、作業中はシェルを丸ごと渡している。</p>
+  <p>私が見ていない間も動く常駐に、鍵は渡さない。キー1回分の1行アプリ（Recess.app）にだけ、アクセシビリティの許可と、System Events を制御するオートメーションの許可を出した。python3 には出していない。「python3 に許可を与えるのはちょっと怖い」が理由で、Safari の設定も変えていない。ただし、herdr に登録した他のマシンの状態は、常駐が手元の ssh 鍵で読みに行く。いっぽうで AI 本体には、作業中はシェルを丸ごと渡している。</p>
 
   <h3>線2 呼ばれる時機</h3>
   <p>連れ出す側は慎重に、呼び戻す側は即時。Netflix へ連れ出すのは、見ているタブ（フォーカスしているペインと、同じタブに並ぶペイン）の AI が働いている（working）ときだけ。それも、どこにも質問と未読の完了が無く、そのタブに読み中のペインが無く、手を離して3秒たち、最前面がターミナルで、最後に呼び戻されてから20秒以上たっているとき。AI が止まっている（idle）ときは行かない。次を打つ準備の時間だから。以前の版は AI が止まっていても連れ出していて、呼び戻された直後に2〜3回 Netflix へ戻される原因になっていたので、そこは閉じた。ターミナルへ呼び戻すのは、どこかに新しく現れた質問と完了、それと、見ているタブの AI が working から idle になったとき。起動したときに既にあるものでは呼ばない。人の邪魔になりうる側だけ慎重にした。</p>
 
   <h3>線3 戻り方</h3>
-  <p>スペース1回、0.3秒、ターミナル。呼ばれると Spacr.app がスペースを1回送って再生を止め、0.3秒待ってターミナルを前に出す。切り替わったことは私の目で見た。呼び戻しは約8分に1回の細切れだったが、見なかった私が見た。</p>
+  <p>スペース1回、0.3秒、ターミナル。呼ばれると Recess.app がスペースを1回送って再生を止め、0.3秒待ってターミナルを前に出す。切り替わったことは私の目で見た。呼び戻しは約8分に1回の細切れだったが、見なかった私が見た。</p>
 
   <h2>入れる</h2>
-  <p>1行目で <code>install.sh</code> を手元に落とす。中身を読む。2行目で実行する。<code>install.sh</code> は実行時に常駐本体 <code>spacr-watch.py</code> も同じ場所から取得するので、読んでから入れたい人は両方を読む（GitHub に同じものがある）。</p>
+  <p>1行目で <code>install.sh</code> を手元に落とす。中身を読む。2行目で実行する。<code>install.sh</code> は実行時に常駐本体 <code>recess-watch.py</code> も同じ場所から取得するので、読んでから入れたい人は両方を読む（GitHub に同じものがある）。</p>
   <div class="cmd">
-    <pre id="install-1"><code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh</code></pre>
+    <pre id="install-1"><code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh</code></pre>
     <button type="button" class="copy" data-copy="install-1">コピー</button>
   </div>
   <div class="cmd">
     <pre id="install-2"><code>sh install.sh</code></pre>
     <button type="button" class="copy" data-copy="install-2">コピー</button>
   </div>
-  <p class="muted">正本は GitHub です。同じファイル: <code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh</code></p>
+  <p class="muted">正本は GitHub です。同じファイル: <code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh</code></p>
   <p class="muted">対象は macOS 14 以降と herdr 0.9.1 以降。私が確かめたのは macOS 14.3.1、herdr 0.9.1、Safari の Netflix です。</p>
 
   <h2>入れると何が起きるか</h2>
   <ol>
-    <li><strong>常駐が立つ。</strong>launchd の LaunchAgent として <code>~/.local/share/spacr/spacr-watch.py</code>（Python 3 の標準ライブラリだけ）が登録され、ログインのたびに起動する。2秒おきに <code>herdr agent list</code> を読み、状態の変化を見て、ブラウザかターミナルを <code>open -a</code> で前に出す。herdr に登録した他のマシンがあれば、そのマシンの状態も ssh で同じように読みに行く。</li>
-    <li><strong>Spacr.app が作られる。</strong>中身は AppleScript 1行 <code>tell application "System Events" to key code 49</code>（スペースを1回送る）。手元で <code>osacompile</code> により作られ、<code>~/Applications</code> に置かれる。ビルド済みのものは落とさない。壊れていない Spacr.app が既にあれば作り直さない（作り直すのは <code>sh install.sh --rebuild-app</code> のとき）。</li>
-    <li><strong>許可を2つ求める。</strong>1つは アクセシビリティ。「システム設定」の「プライバシーとセキュリティ」にある「アクセシビリティ」で、Spacr.app を手で追加してオンにする。もう1つは オートメーション。初めてスペースが送られるとき「Spacr が System Events を制御しようとしています」と聞かれるので「許可」を選ぶ。どちらも相手はこの1行アプリだけ。</li>
+    <li><strong>常駐が立つ。</strong>launchd の LaunchAgent として <code>~/.local/share/recess/recess-watch.py</code>（Python 3 の標準ライブラリだけ）が登録され、ログインのたびに起動する。2秒おきに <code>herdr agent list</code> を読み、状態の変化を見て、ブラウザかターミナルを <code>open -a</code> で前に出す。herdr に登録した他のマシンがあれば、そのマシンの状態も ssh で同じように読みに行く。</li>
+    <li><strong>Recess.app が作られる。</strong>中身は AppleScript 1行 <code>tell application "System Events" to key code 49</code>（スペースを1回送る）。手元で <code>osacompile</code> により作られ、<code>~/Applications</code> に置かれる。ビルド済みのものは落とさない。壊れていない Recess.app が既にあれば作り直さない（作り直すのは <code>sh install.sh --rebuild-app</code> のとき）。</li>
+    <li><strong>許可を2つ求める。</strong>1つは アクセシビリティ。「システム設定」の「プライバシーとセキュリティ」にある「アクセシビリティ」で、Recess.app を手で追加してオンにする。もう1つは オートメーション。初めてスペースが送られるとき「Recess が System Events を制御しようとしています」と聞かれるので「許可」を選ぶ。どちらも相手はこの1行アプリだけ。</li>
     <li><strong>python3 には権限を出さない。</strong>常駐はキーを送らない。ブラウザとターミナルを前に出すだけで、それには権限が要らない。Safari の設定も変えない。</li>
   </ol>
 
@@ -192,7 +192,7 @@
     <li>Safari を前に出すだけなので、Netflix の正しいタブや動画へのフォーカスまでは保証しない。最初に一度、動画をクリックしてフォーカスを置く必要がある。</li>
     <li>見ているタブの AI が working なら、手を離して考えごとをしている最中でも Netflix へ連れて行かれる。この穴はまだ直していない。</li>
     <li>ターミナルでもブラウザでもないアプリ（Finder やエディタ）を見ているときに呼び戻されると、それでもブラウザを前に出してスペースを押す。</li>
-    <li>Spacr.app を作り直す（<code>sh install.sh --rebuild-app</code>。壊れているか古い版のときは再実行でも作り直す）と、出した許可が外れることがある。外れたら、一覧から削除して追加し直す。それ以外のただの再実行では作り直さない。</li>
+    <li>Recess.app を作り直す（<code>sh install.sh --rebuild-app</code>。壊れているか古い版のときは再実行でも作り直す）と、出した許可が外れることがある。外れたら、一覧から削除して追加し直す。それ以外のただの再実行では作り直さない。</li>
     <li>再生が始まったかどうかを常駐は読めない。ログに残るのは「送った」記録だけで、切り替わりは目で確かめた。</li>
     <li>応答しなくなった他のマシンは、最後に分かった状態を持ち続ける。いなくなった扱いにはしない。</li>
     <li>手を離した秒数はこの Mac の入力装置から取る。スマホから ssh で打っていても「手」には数えない。</li>
@@ -202,37 +202,37 @@
   </ul>
 
   <h2>様子を見る</h2>
-  <p>常駐の判断は <code>~/.local/state/spacr/watch.log</code> に残る。plist の <code>EnvironmentVariables</code> に <code>SPACR_DRY_RUN=1</code> を書いて載せ直すと、判断はログに書くが何も押さず何も切り替えない。私は最初の1日をこれでログだけ読むのを勧める。launchd から起動できないときは同じフォルダの <code>watch.stderr.log</code> を見る。</p>
+  <p>常駐の判断は <code>~/.local/state/recess/watch.log</code> に残る。plist の <code>EnvironmentVariables</code> に <code>RECESS_DRY_RUN=1</code> を書いて載せ直すと、判断はログに書くが何も押さず何も切り替えない。私は最初の1日をこれでログだけ読むのを勧める。launchd から起動できないときは同じフォルダの <code>watch.stderr.log</code> を見る。</p>
 
   <h2>止める、動かす、消す</h2>
   <p>止める（常駐だけを降ろす。次にログインするまで止まったまま）:</p>
   <div class="cmd">
-    <pre id="stop"><code>launchctl bootout gui/$(id -u)/jp.feel-physics.spacr</code></pre>
+    <pre id="stop"><code>launchctl bootout gui/$(id -u)/jp.feel-physics.recess</code></pre>
     <button type="button" class="copy" data-copy="stop">コピー</button>
   </div>
   <p>動かす:</p>
   <div class="cmd">
-    <pre id="start"><code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.spacr.plist</code></pre>
+    <pre id="start"><code>launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.plist</code></pre>
     <button type="button" class="copy" data-copy="start">コピー</button>
   </div>
   <p>消す（<code>install.sh</code> が置いたものを全部外す。同じリポジトリの <code>uninstall.sh</code> を落として実行する。ログも消すなら <code>--purge</code>）:</p>
   <div class="cmd">
-    <pre id="remove"><code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/uninstall.sh
+    <pre id="remove"><code>curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/uninstall.sh
 sh uninstall.sh</code></pre>
     <button type="button" class="copy" data-copy="remove">コピー</button>
   </div>
   <p>手で消すなら、置いたものはこれで全部:</p>
   <div class="cmd">
-    <pre id="remove-manual"><code>launchctl bootout gui/$(id -u)/jp.feel-physics.spacr
-rm ~/Library/LaunchAgents/jp.feel-physics.spacr.plist
-rm -r ~/Applications/Spacr.app ~/.local/share/spacr ~/.local/state/spacr
+    <pre id="remove-manual"><code>launchctl bootout gui/$(id -u)/jp.feel-physics.recess
+rm ~/Library/LaunchAgents/jp.feel-physics.recess.plist
+rm -r ~/Applications/Recess.app ~/.local/share/recess ~/.local/state/recess
 rm ~/.local/bin/afplay   # --with-afplay で入れたときだけ</code></pre>
     <button type="button" class="copy" data-copy="remove-manual">コピー</button>
   </div>
-  <p class="muted">アクセシビリティとオートメーションの一覧に残る Spacr の項目は、システム設定から手で外す。</p>
+  <p class="muted">アクセシビリティとオートメーションの一覧に残る Recess の項目は、システム設定から手で外す。</p>
 
   <h2>ソース</h2>
-  <p><a href="https://github.com/tatsuro-ueda/spacr">github.com/tatsuro-ueda/spacr</a></p>
+  <p><a href="https://github.com/tatsuro-ueda/recess">github.com/tatsuro-ueda/recess</a></p>
   <p>このコードは AI に書かせ、目的・権限・止め方は作者が決めた。</p>
 </main>
 
