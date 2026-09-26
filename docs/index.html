@@ -32,7 +32,7 @@
 <main>
 <h1 id="recess">Recess</h1>
 <p>AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls.</p>
-<p>English first, 日本語は後半（<a href="#recess-日本語">日本語へ</a>）.</p>
+<p>English first, 日本語は後半（<a href="#recess日本語">日本語へ</a>）.</p>
 <figure><img src="manga-en-1.jpg" alt="Recess, page 1 of 2. AI agents are useful, but why do they leave me so strangely exhausted? Brain Fry." loading="lazy"></figure>
 <figure><img src="manga-en-2.jpg" alt="Recess, page 2 of 2." loading="lazy"></figure>
 <h2 id="what-hurts">What hurts</h2>
@@ -52,8 +52,8 @@
 <ul><li>Only while an agent is working, it brings the browser to front and sends one space key. The show plays.</li><li>When an agent asks a question or finishes, it sends one more space key and brings the terminal to front. The show pauses.</li><li>The only thing that sends a key is <code>Recess.app</code>, a one-line AppleScript app. The Accessibility permission goes to that app and nothing else. The Python daemon gets none.</li></ul>
 <p>Three lines:</p>
 <ol><li>What I hand over: an unattended process gets one line's worth of permission, no more.</li><li>When I am called: leaving waits 3 seconds after my hands are off; calling back is immediate.</li><li>How I come back: one space key, 0.3 seconds, terminal.</li></ol>
-<p><code>recess off</code> makes it watch only. "That's enough for today" is your call (see <a href="install.md#switch-it-on-and-off">Switch it on and off</a>).</p>
-<p>I never watched Netflix. Now I watch it while the AI works. To me, that is surprising. What it was tested on, and what it cannot do, is in <a href="spec.md#known-weaknesses">Known weaknesses</a> and <a href="install.md#who-wrote-this">Who wrote this</a>.</p>
+<p><code>recess off</code> makes it watch only. "That's enough for today" is your call (see <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md#switch-it-on-and-off">Switch it on and off</a>).</p>
+<p>I never watched Netflix. Now I watch it while the AI works. To me, that is surprising. What it was tested on, and what it cannot do, is in <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/spec.md#known-weaknesses">Known weaknesses</a> and <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md#who-wrote-this">Who wrote this</a>.</p>
 <h2 id="everything-else">Everything else</h2>
 <ul><li><strong>Install guide</strong>: requirements, the two commands, the one permission, on/off, who wrote this → <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md">docs/install.md</a></li><li><strong>Specification</strong>: how it decides (state diagram), settings, logs and stopping, known weaknesses → <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/spec.md">docs/spec.md</a></li></ul>
 <h2 id="author">Author</h2>
@@ -82,10 +82,10 @@
 <ul><li>AI が働いている間だけ、ブラウザを前に出してスペースキーを1回送る。動画が動く。</li><li>AI が質問したか、終わったら、スペースをもう1回送って、ターミナルを前に出す。動画が止まる。</li><li>キーを送るのは、AppleScript 1行のアプリ <code>Recess.app</code> だけ。アクセシビリティの許可はこのアプリにだけ出す。常駐の python3 には何も渡さない。</li></ul>
 <p>線は3本。</p>
 <ol><li>任せる範囲：無人で動くものには1行ぶんの権限しか渡さない。</li><li>呼ばれる時機：連れ出す側は手を離して3秒待つ。呼び戻す側は即時。</li><li>戻り方：スペース1回、0.3秒、ターミナル。</li></ol>
-<p><code>recess off</code> で見張るだけになる。今日はここまで、はあなたが決める（<a href="install.md#on-と-off-の切り替え">ON と OFF の切り替え</a>）。</p>
-<p>もともと私は Netflix をまったく見ない人間だった。それが、AI が働いている間に Netflix を楽しんでいる。私にとっては驚くべきことだ。何で確かめたか、何ができないかは<a href="spec.md#分かっている弱点">分かっている弱点</a>と<a href="install.md#誰が書いたか">誰が書いたか</a>にある。</p>
+<p><code>recess off</code> で見張るだけになる。今日はここまで、はあなたが決める（<a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md#on-と-off-の切り替え">ON と OFF の切り替え</a>）。</p>
+<p>もともと私は Netflix をまったく見ない人間だった。それが、AI が働いている間に Netflix を楽しんでいる。私にとっては驚くべきことだ。何で確かめたか、何ができないかは<a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/spec.md#分かっている弱点">分かっている弱点</a>と<a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md#誰が書いたか">誰が書いたか</a>にある。</p>
 <h2 id="そのほかのこと">そのほかのこと</h2>
-<ul><li><strong>導入方法</strong>：動作の前提、2行のコマンド、許可、ON/OFF、誰が書いたか → <a href="install.md#recess-導入方法日本語">docs/install.md</a></li><li><strong>仕様詳細</strong>：どう判断しているか（状態遷移図）、設定、ログと止め方、分かっている弱点 → <a href="spec.md#recess-仕様詳細日本語">docs/spec.md</a></li></ul>
+<ul><li><strong>導入方法</strong>：動作の前提、2行のコマンド、許可、ON/OFF、誰が書いたか → <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/install.md#recess-導入方法日本語">docs/install.md</a></li><li><strong>仕様詳細</strong>：どう判断しているか（状態遷移図）、設定、ログと止め方、分かっている弱点 → <a href="https://github.com/tatsuro-ueda/recess/blob/main/docs/spec.md#recess-仕様詳細日本語">docs/spec.md</a></li></ul>
 <h2 id="作者">作者</h2>
 <p>Feel Physics / 植田達郎 — <a href="https://feel-physics.jp/">feel-physics.jp</a></p>
 <h2 id="ライセンス">ライセンス</h2>

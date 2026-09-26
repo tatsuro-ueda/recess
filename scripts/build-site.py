@@ -19,8 +19,8 @@ def inline(s):
     s = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", s)
     def link(m):
         text, url = m.group(1), m.group(2)
-        if url.startswith("docs/") and url.endswith(".md"):
-            url = REPO + "/blob/main/" + url          # Markdown ページは GitHub 側で読む
+        if url.startswith("docs/") and ".md" in url:
+            url = REPO + "/blob/main/" + url          # Markdown ページ（アンカー付きも）は GitHub 側で読む
         elif url.startswith("docs/"):
             url = url[len("docs/"):]                  # 画像などは同じフォルダ
         elif url == "LICENSE":
@@ -110,6 +110,15 @@ CSS = """
 
 md = open(README, encoding="utf-8").read()
 body = convert(md)
+# ページ内リンク（#…）は、見出しの id とハイフン無しで照合して付け替える
+ids = re.findall(r'id="([^"]+)"', body)
+def fix_anchor(m):
+    target = m.group(1)
+    if target in ids: return m.group(0)
+    for i in ids:
+        if i.replace("-", "") == target.replace("-", ""): return f'href="#{i}"'
+    return m.group(0)
+body = re.sub(r'href="#([^"]+)"', fix_anchor, body)
 title = "Recess"
 desc = "AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls."
 page = f"""<!DOCTYPE html>
