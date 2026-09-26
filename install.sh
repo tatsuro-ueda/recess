@@ -19,7 +19,7 @@
 #   7. アクセシビリティ許可の手順・ログの場所・止め方を表示する
 #
 # 方針: sudo は使わない（root では動かさない）。消すのは自分が作ったものだけ。何度実行しても同じ結果になる（冪等）。
-# 環境変数: SPACR_BASE_URL（既定 https://spacr.feel-physics.jp）、SPACR_FALLBACK_URL（GitHub raw）。どちらも https のみ（curl --proto '=https'）
+# 環境変数: SPACR_BASE_URL（既定 GitHub raw の main）、SPACR_FALLBACK_URL（既定 GitHub raw の HEAD）。どちらも https のみ（curl --proto '=https'）
 set -eu
 
 # ---------- 小道具（$HOME を使う前に定義する） ----------
@@ -119,7 +119,7 @@ Spacr installer (macOS)
   -h, --help      この説明を表示する
 
 環境変数:
-  SPACR_BASE_URL       spacr-watch.py の取得元（既定 https://spacr.feel-physics.jp。https のみ）
+  SPACR_BASE_URL       spacr-watch.py の取得元（既定 GitHub raw の main。https のみ）
   SPACR_FALLBACK_URL   取得元が落ちているときの予備（既定 GitHub raw。https のみ）
 EOF
 }

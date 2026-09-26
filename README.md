@@ -60,7 +60,7 @@ curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
 sh install.sh
 ```
 
-If `spacr.feel-physics.jp` does not answer yet, take the same file from GitHub:
+Source and install files live on GitHub. The same file is also mirrored at `spacr.feel-physics.jp` once that domain is live:
 
 ```sh
 curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
@@ -272,7 +272,7 @@ curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
 sh install.sh
 ```
 
-`spacr.feel-physics.jp` がまだ応答しないときは、同じファイルを GitHub から：
+ソースと導入ファイルの正本は GitHub です。`spacr.feel-physics.jp` が開通したら、同じものがそこにも出ます：
 
 ```sh
 curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/spacr/main/install.sh
