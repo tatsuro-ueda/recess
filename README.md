@@ -4,6 +4,9 @@ AI works, you take recess. One space key to your video, and back to the terminal
 
 English first, 日本語は後半（[日本語へ](#recess-日本語)）.
 
+![Recess, page 1 of 2. AI agents are useful, but why do they leave me so strangely exhausted? Brain Fry.](docs/manga-en-1.jpg)
+![Recess, page 2 of 2.](docs/manga-en-2.jpg)
+
 ## The struggling moment
 
 It is night. In the terminal, a few AI agents are each working on something. I sit in front of them. I am not doing anything. I am watching the screen.
@@ -283,6 +286,9 @@ MIT. See [LICENSE](LICENSE).
 # Recess（日本語）
 
 AI が働く間は休み時間。スペースキー1回で動画へ、herdr に呼ばれたらターミナルへ戻る。
+
+![Recess 漫画 1/2。「AIを使え」って言うけど、もう頭がパンクしそう。脳が油揚げになっちゃう？ AI疲れの新常識「Brain Fry」](docs/manga-ja-1.jpg)
+![Recess 漫画 2/2。](docs/manga-ja-2.jpg)
 
 ## もがきの瞬間
 
