@@ -413,12 +413,14 @@ class Watcher:
             self.fg_prev = fg_now            # 起動直後は遷移とみなさない
         if self.fg_prev and not fg_now:
             self.pending_off = True
-            log(f"FG->BG: attention gone, reading gone -> browser armed (working in view: {bool(view_working)})")
+            log(f"FG->BG: attention gone, reading gone -> browser armed (working anywhere: {any(v == 'working' for v in now.values())})")
         elif fg_now:
             self.pending_off = False
         self.fg_prev = fg_now
-        # 実際に行けるのは、見ているタブに working があるときだけ（無ければ armed のまま待つ）
-        want_off = (not attention) and afp is not None and bool(view_working) and not view_reading
+        # 実際に行けるのは、どこかに working があるときだけ（見ているタブに限らない。ユーザー判断 2026-09-26）。
+        # 全部 idle なら待つ相手がいないので行かない。無ければ armed のまま待つ
+        any_working = any(v == "working" for v in now.values())
+        want_off = (not attention) and afp is not None and any_working and not view_reading
 
         app = front_app()
         if app in TERMINAL_APPS:
