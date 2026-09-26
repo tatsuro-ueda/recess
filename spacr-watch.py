@@ -79,6 +79,7 @@ import time
 
 HOME = os.path.expanduser("~")
 STATE_DIR = os.path.join(HOME, ".local/state/spacr")
+OFF_FILE = os.path.join(STATE_DIR, "off")   # これがあるとき Spacr は OFF（状態は追うが、連れ出し・呼び戻し・ジャンプをしない）。spacr on/off で切り替える
 LOG = os.path.join(STATE_DIR, "watch.log")
 
 
@@ -316,6 +317,11 @@ class Watcher:
         return eps
 
     def tick(self):
+        enabled = not os.path.exists(OFF_FILE)
+        if enabled != getattr(self, "_enabled_logged", None):
+            log(f"MODE  {'ON' if enabled else 'OFF'}")
+            self._enabled_logged = enabled
+        self.enabled = enabled
         eps = self.collect()
         now, focus, fstat = {}, {}, {}
         for ep, agents in eps.items():
@@ -381,7 +387,10 @@ class Watcher:
         view_keys = {k for ep in focus for k in in_view(ep)}
         finished_in_view = [k for k in now if now[k] == "idle" and self.prev.get(k) == "working"
                             and k in view_keys]
-        if new_attention or finished_in_view:
+        if (new_attention or finished_in_view) and not self.enabled:
+            log(f"OFF: would return ({new_attention or finished_in_view}) -> skipped")
+            self.pending_off = False
+        elif new_attention or finished_in_view:
             why = f"new attention: {new_attention}" if new_attention else f"finished in view: {finished_in_view}"
             wake(why)
             self.pending_off = False
@@ -428,7 +437,7 @@ class Watcher:
         elif app in BROWSER_APPS:            # ブラウザだけ覚える（システム設定などを戻り先にしない）
             LAST_OTHER_APP["name"] = app
 
-        if self.pending_off and want_off:
+        if self.pending_off and want_off and self.enabled:
             idle = hid_idle()
             since_return = time.monotonic() - self.last_return_at
             if since_return < RETURN_COOLDOWN:

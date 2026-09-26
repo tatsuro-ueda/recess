@@ -1,0 +1,30 @@
+id = "spacr"
+name = "Spacr"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "AI agent works, you watch. ON/OFF を herdr のアクションで切り替える（常駐は launchd）"
+platforms = ["macos"]
+
+[[actions]]
+id = "on"
+title = "Spacr ON"
+contexts = ["workspace"]
+command = ["sh", "spacr-mode.sh", "on"]
+
+[[actions]]
+id = "off"
+title = "Spacr OFF"
+contexts = ["workspace"]
+command = ["sh", "spacr-mode.sh", "off"]
+
+[[actions]]
+id = "toggle"
+title = "Spacr ON/OFF toggle"
+contexts = ["workspace"]
+command = ["sh", "spacr-mode.sh", "toggle"]
+
+[[actions]]
+id = "status"
+title = "Spacr status"
+contexts = ["workspace"]
+command = ["sh", "spacr-mode.sh", "status"]

@@ -224,6 +224,20 @@ say "  $STATE_DIR"
 
 say "[3/7] spacr-watch.py を置きます"
 
+fetch_file() {
+  # $1 = ファイル名、$2 = 保存先。取得元 → 予備 の順に試す。HTTPS 以外は拒否する
+  command -v curl >/dev/null 2>&1 || die "curl が見つかりません（同梱の $1 が無いので取得が必要です）"
+  for base in "$BASE_URL" "$FALLBACK_URL"; do
+    url="${base%/}/$1"
+    say "  取得: $url"
+    if curl -fsSL --proto '=https' --tlsv1.2 --retry 2 --retry-delay 1 --connect-timeout 10 --max-time 60 -o "$2" "$url"; then
+      return 0
+    fi
+    warn "取得できませんでした: $url"
+  done
+  return 1
+}
+
 fetch_watch_py() {
   # $1 = 保存先。取得元 → 予備 の順に試す。HTTPS 以外は拒否する
   command -v curl >/dev/null 2>&1 || die "curl が見つかりません（同梱の spacr-watch.py が無いので取得が必要です）"
@@ -260,6 +274,37 @@ fi
 # -S: 一時ファイルへ書いてから rename する（途中で止まっても、書きかけの spacr-watch.py が本番パスに残らない）
 run install -S -m 0755 "$STAGED_PY" "$WATCH_PY"
 say "  $WATCH_PY"
+
+# モード切替（spacr on/off）と herdr プラグイン（アクション）。同梱があればそれを、無ければ取得
+for f in spacr-mode.sh herdr-plugin.toml; do
+  staged="$TMP_DIR/$f"
+  if [ "$FETCH" -eq 0 ] && [ -f "$SCRIPT_DIR/$f" ]; then
+    cp "$SCRIPT_DIR/$f" "$staged"
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    say "  [dry-run] 取得: ${BASE_URL%/}/$f"
+  else
+    fetch_file "$f" "$staged" || die "$f を取得できませんでした"
+  fi
+  if [ -f "$staged" ]; then
+    [ -s "$staged" ] || die "$f が空です"
+    case "$f" in *.sh) mode=0755 ;; *) mode=0644 ;; esac
+    run install -S -m "$mode" "$staged" "$SHARE_DIR/$f"
+    say "  $SHARE_DIR/$f"
+  fi
+done
+run mkdir -p "$BIN_DIR"
+run ln -sf "$SHARE_DIR/spacr-mode.sh" "$BIN_DIR/spacr"
+say "  ${BIN_DIR}/spacr（spacr on|off|toggle|status。PATH に ${BIN_DIR} が無ければフルパスで）"
+if [ "$DRY_RUN" -eq 1 ]; then
+  say "  [dry-run] herdr plugin link ${SHARE_DIR}（herdr のアクション: spacr.on / spacr.off / spacr.toggle / spacr.status）"
+else
+  "$HERDR_BIN" plugin unlink spacr >/dev/null 2>&1 || true
+  if "$HERDR_BIN" plugin link "$SHARE_DIR" >/dev/null 2>&1; then
+    say "  herdr プラグイン spacr を登録しました（herdr plugin action invoke spacr.toggle で切り替え）"
+  else
+    warn "herdr プラグインの登録に失敗しました（herdr サーバーが動いていないときは、あとで 'herdr plugin link ${SHARE_DIR}' を実行）"
+  fi
+fi
 
 # ---------- 4. Spacr.app ----------
 
@@ -482,6 +527,7 @@ say "           $STATE_DIR/watch.stderr.log（launchd から起動できない�
 say "止める:    launchctl bootout gui/$UID_NUM/$LABEL"
 say "動かす:    launchctl bootstrap gui/$UID_NUM $PLIST"
 say "様子を見る: launchctl print gui/$UID_NUM/$LABEL | grep state"
+say "切り替え:  spacr on|off|toggle|status（herdr からは herdr plugin action invoke spacr.toggle）"
 say "外す:      sh uninstall.sh（ログも消すなら --purge）"
 case "$AFPLAY_STATUS" in
   installed) say "afplay:    ${AFPLAY_WRAPPER}（herdr の効果音を横取りして画面を点けます）" ;;

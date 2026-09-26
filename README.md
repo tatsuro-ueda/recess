@@ -185,6 +185,24 @@ Then remove Spacr from the Accessibility list in System Settings, and from the A
 
 herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/.local/bin/afplay`, a short shell script: if its parent process is herdr, it wakes the display (`caffeinate -u -t 2`), appends one line to `~/.local/state/spacr/sound.log` and then hands over to the real `/usr/bin/afplay`; for any other caller it just runs the real one. It only works if `~/.local/bin` comes before `/usr/bin` in the PATH of the shell that starts herdr. It is off by default because it shadows a system command.
 
+## Switch it on and off
+
+Spacr keeps watching, but you decide when it may move you:
+
+```sh
+spacr status    # ON or OFF
+spacr off       # watch only. No browser trips, no call-backs
+spacr on        # back to normal
+spacr toggle
+```
+
+`spacr` is a symlink in `~/.local/bin`. The same switch is registered as a herdr plugin, so you can bind it to a key or run it from herdr:
+
+```sh
+herdr plugin action invoke spacr.toggle   # also spacr.on / spacr.off / spacr.status
+```
+
+
 ## Known weaknesses
 
 - Space is a toggle. Pause or play by hand and the next press goes the wrong way. Spacr never reads playback state; keep the video paused while you are at the terminal.
@@ -396,6 +414,24 @@ rm ~/.local/bin/afplay      # --with-afplay で入れたときだけ
 ### 任意の afplay ラッパー
 
 herdr はエージェントが終わったときと質問したときに音を鳴らします。`--with-afplay` は `~/.local/bin/afplay` に短いシェルスクリプトを置きます。親プロセスが herdr なら画面を点け（`caffeinate -u -t 2`）、`~/.local/state/spacr/sound.log` に1行書いてから本物の `/usr/bin/afplay` へ渡し、それ以外の呼び出し元なら本物をそのまま実行するだけです。herdr を起動するシェルの PATH で `~/.local/bin` が `/usr/bin` より前にあるときだけ効きます。システムのコマンドを覆い隠すので、既定では入れません。
+
+## ON と OFF の切り替え
+
+常駐は動いたまま、連れ出しと呼び戻しだけを止められます。
+
+```sh
+spacr status    # ON か OFF か
+spacr off       # 見張るだけ。ブラウザへ行かず、呼び戻しもしない
+spacr on        # 元に戻す
+spacr toggle
+```
+
+`spacr` は `~/.local/bin` のシンボリックリンクです。同じ切り替えが herdr のプラグインとしても登録されるので、herdr から実行したりキーに割り当てたりできます。
+
+```sh
+herdr plugin action invoke spacr.toggle   # spacr.on / spacr.off / spacr.status も同じ
+```
+
 
 ## 分かっている弱点
 

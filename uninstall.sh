@@ -164,6 +164,13 @@ done
 # ---------- 4. 常駐スクリプト ----------
 
 say "[4/7] 常駐スクリプトの置き場を消します"
+if command -v herdr >/dev/null 2>&1; then
+  run herdr plugin unlink spacr >/dev/null 2>&1 || true
+  say "  herdr プラグイン spacr の登録を外しました（無ければ何もしません）"
+fi
+if [ -L "$BIN_DIR/spacr" ]; then
+  case "$(readlink "$BIN_DIR/spacr")" in "$SHARE_DIR"/*) run rm -f "$BIN_DIR/spacr"; did 消し "$BIN_DIR/spacr" ;; esac
+fi
 if [ -d "$SHARE_DIR" ]; then
   run safe_rm_rf "$SHARE_DIR"
   did 消し "$SHARE_DIR"
