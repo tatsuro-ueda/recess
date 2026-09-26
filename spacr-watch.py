@@ -16,7 +16,7 @@
   呼ばれた : どこかに blocked(ask) / done(stop・未読) が新しく現れた、または見ているタブのペインが
              working→idle になったとき → 画面を点け、最前面がブラウザならスペース1回（一時停止）
              →0.3秒→ターミナルを前に出す。ターミナルを見ているなら押さない。
-  猶予     : 呼び戻し後 RETURN_COOLDOWN 秒はブラウザへ行かない（AI が続けて聞いてくるのを待つ）。
+  猶予     : 呼び戻し後 RETURN_COOLDOWN 秒はブラウザへ行かない（既定 0）。
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
              見ている端末で別の idle ペインへ移ったら終わる。
   ジャンプ : Mac のペインが done になったら herdr agent focus で自動ジャンプ
@@ -58,7 +58,7 @@
   SPACR_HERDR_BIN               herdr の場所（既定: PATH から探す → ~/.local/bin/herdr）
   SPACR_POLL_SECONDS            状態を集める間隔（既定 2）
   SPACR_HANDS_OFF_SECONDS       「手を離した」とみなす秒数（既定 3）
-  SPACR_RETURN_COOLDOWN_SECONDS 呼び戻し後にブラウザへ行かない秒数（既定 20）
+  SPACR_RETURN_COOLDOWN_SECONDS 呼び戻し後にブラウザへ行かない秒数（既定 0。行き来が気になるときだけ 5 など）
   SPACR_TERMINAL_APPS           ターミナルとみなすプロセス名。空白区切り
                                 （既定 "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux"）
   SPACR_BROWSER_APPS            ブラウザとみなすアプリ名。名前に空白を含むのでカンマ区切り
@@ -117,7 +117,7 @@ HERDR = (os.environ.get("SPACR_HERDR_BIN")
          or os.path.join(HOME, ".local/bin/herdr"))
 POLL = env_number("SPACR_POLL_SECONDS", 2.0, float)
 HANDS_OFF = env_number("SPACR_HANDS_OFF_SECONDS", 3, int)
-RETURN_COOLDOWN = env_number("SPACR_RETURN_COOLDOWN_SECONDS", 20, int)  # 呼び戻し後、次にブラウザへ行くまでの最短秒数
+RETURN_COOLDOWN = env_number("SPACR_RETURN_COOLDOWN_SECONDS", 0, int)  # 呼び戻し後、次にブラウザへ行くまでの最短秒数（既定0。必要なら環境変数で）
 TERMINAL_APPS = set(os.environ.get(
     "SPACR_TERMINAL_APPS", "iTerm2 Terminal Ghostty kitty Alacritty WezTerm cmux").split())
 REMOTE_STALE = 30          # 秒。取得に失敗した他マシンの状態を、この間は前回の値で持ちこたえる
