@@ -51,6 +51,51 @@ Space once, 0.3 seconds, terminal. That is the whole return path.
 
 Space is a toggle. Recess does not know whether the video is playing. It sends one key at each transition and trusts that the video was paused while you were at the terminal. That is the deal you make with it: at the terminal, the video is paused.
 
+## State diagram
+
+Two big states. Recess only moves you on the transitions between them.
+
+```mermaid
+stateDiagram-v2
+    direction TB
+
+    state "background (no human needed: every pane is idle or working)" as bg {
+        state "Terminal" as term
+        state "Video (browser)" as nf
+        [*] --> term
+        term --> nf : armed by an fg→bg transition + some agent is working + hands off 3 s + terminal frontmost (one space key)
+        nf --> term : you come back on your own (Recess does nothing)
+    }
+
+    state "foreground (human needed: a blocked or done pane anywhere, or a reading pane in the tab you are looking at)" as fg {
+        state "blocked (question or approval)" as blocked
+        state "done (finished, not yet seen)" as done
+        state "reading (finished in front of you, or a done pane you just opened)" as reading
+        done --> reading : open that pane (herdr agent focus does the same)
+    }
+
+    [*] --> bg
+    bg --> fg : a new blocked / a new done / a pane in your tab goes working → idle
+    fg --> bg : you answer the blocked / you send the next prompt from reading / you move from reading to another idle pane
+
+    note right of fg
+        On entering (call-back)
+        Wake the screen.
+        If a browser is frontmost: one space key, 0.3 s, then bring the terminal to front.
+        If the terminal is already frontmost: no key is sent.
+        A done pane on this Mac: focus it after 3 s hands-off (not when an SSH login is present).
+        Any one of blocked / done / reading keeps you in foreground.
+        blocked and done are checked on every machine; reading only in the tab you are looking at.
+    end note
+
+    note right of bg
+        After leaving (going back to video)
+        The trip is armed only by the fg→bg transition. Changes inside background never arm it.
+        No trip when every pane is idle (nobody to wait for).
+        If another machine stops answering, its last state is kept for 30 s, then ignored.
+    end note
+```
+
 ## Install
 
 Two lines. Download, read, then run. Don't pipe curl into sh.
@@ -280,6 +325,51 @@ Recess は常駐プログラム（Python ファイル1つ。launchd が動かす
 スペース1回、0.3秒、ターミナル。戻り道はこれだけです。
 
 スペースは切り替えです。Recess は動画が再生中かどうかを知りません。状態が変わった瞬間に1回キーを送るだけで、ターミナルにいる間は動画が止まっていたと信じています。それが Recess との約束です：ターミナルにいるとき、動画は止めておく。
+
+## 状態遷移図
+
+大きな状態は2つだけです。Recess があなたを動かすのは、その間の遷移のときだけです。
+
+```mermaid
+stateDiagram-v2
+    direction TB
+
+    state "background（人の手が要らない。全ペインが idle か working）" as bg {
+        state "ターミナル" as term
+        state "動画（ブラウザ）" as nf
+        [*] --> term
+        term --> nf : fg→bg の遷移で印が立っている ＋ どこかに working ＋ 手を離して3秒 ＋ 最前面がターミナル（スペース1回）
+        nf --> term : 自分でターミナルへ戻る（Recess は何もしない）
+    }
+
+    state "foreground（人の手が要る。blocked か done がどこかにある、または見ているタブに reading がある）" as fg {
+        state "blocked（質問・承認待ち）" as blocked
+        state "done（終わったが未読）" as done
+        state "reading（目の前で終わった、または done を開いた直後）" as reading
+        done --> reading : そのペインを開く（herdr agent focus でも同じ）
+    }
+
+    [*] --> bg
+    bg --> fg : 新しい blocked／新しい done／見ているタブのペインが working → idle
+    fg --> bg : blocked に答える／reading で次のプロンプトを送る／reading から別の idle ペインへ移る
+
+    note right of fg
+        入るとき（呼び戻し）
+        画面を点ける。
+        ブラウザが最前面ならスペース1回、0.3秒後にターミナルを前へ。
+        ターミナルが最前面ならスペースは送らない。
+        この Mac の done ペインは、手を離して3秒以上でそのペインへ移る（SSH ログイン中は移らない）。
+        blocked・done・reading のどれか1つでも残っていれば foreground。
+        blocked と done は全マシン、reading は見ているタブだけを見る。
+    end note
+
+    note right of bg
+        出たあと（動画へ戻る）
+        印が立つのは fg→bg の遷移だけ。background の中の変化では立たない。
+        全部 idle なら行かない（待つ相手がいない）。
+        他マシンが応答しなければ30秒は前回の状態、以後はそのマシンを無いものとする。
+    end note
+```
 
 ## 導入
 
