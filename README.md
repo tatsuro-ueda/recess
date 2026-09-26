@@ -31,9 +31,9 @@ None of them gave me both: leaving and coming back.
 
 | Force | What it is |
 |---|---|
-| Push | Waiting time disappears as blank. The fatigue of watching. Run several agents and there is more to watch |
+| Push | Waiting time disappears as blank. The fatigue of watching. A chronic, heavy headache. Run several agents and there is more to watch |
 | Pull | A change of scene with a show. Half automatic, half forced (you can switch it off any time). When called, the show pauses and the terminal comes to front |
-| Anxiety | Agents keep running in the background while I watch a show, and I do not know what they are doing. And handing keystroke permission to a daemon an AI wrote |
+| Anxiety | Agents keep running in the background while I watch a show, and I do not know what they are doing |
 | Habit | Nothing needs automating. When the agent starts running, just open the book you were reading |
 
 Recess exists because of three lines drawn against the anxieties.
@@ -316,9 +316,9 @@ AI を積極的に使っている。その一方で、毎日、頭がすり減�
 
 | 力 | 中身 |
 |---|---|
-| 押し出す力（Push） | 待ち時間が空白のまま消える。画面を見張る疲れ。複数のエージェントを回すと、見張る先が増える |
+| 押し出す力（Push） | 待ち時間が空白のまま消える。画面を見張る疲れ。慢性的な重い頭痛。複数のエージェントを回すと、見張る先が増える |
 | 引き寄せる力（Pull） | 動画を見て気分転換できる。半ば自動的に、半ば強制的に（任意にオフにできる）。呼ばれたら動画が止まり、ターミナルが前に出る |
-| 不安（Anxiety） | 動画を見ている間に、裏で AI エージェントを走らせること。何をしているか、わからない。そして、AI に書かせた常駐にキー操作の権限を渡すこと |
+| 不安（Anxiety） | 動画を見ている間に、裏で AI エージェントを走らせること。何をしているか、わからない |
 | 慣れ（Habit） | 自動化する必要はない。AI エージェントが走り始めたら、読みかけの本を開いて読めばいい |
 
 Recess は、不安に対して3本の線を引くことで成り立っている。
