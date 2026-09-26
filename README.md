@@ -4,52 +4,62 @@ English first, 日本語は後半（[日本語へ](#recess-日本語)）.
 
 ---
 
-While your AI agent is working, a video plays in your browser. When the agent calls you, Recess pauses the video and brings you back to the terminal.
+**The struggling moment**
 
-Recess is for people who run AI coding agents in a terminal on a Mac with [herdr](https://herdr.dev). The name comes from the only part of it that needs a permission: a tiny app that presses the space key.
+It is night. In the terminal, a few AI agents are each working on something. I sit in front of them. I am not doing anything. I am watching the screen.
 
-## What happens
+I am waiting to be called. A question may come, or the work may finish. So I cannot leave. If I leave, I will not notice when it stops. But while I watch, there is nothing for me to do.
 
-Recess is a resident program (one Python file, run by launchd) that asks herdr every 2 seconds what your agents are doing, on this Mac and on the machines you have registered in herdr. It keeps to three lines the author drew. Each line can be moved a little (see Settings). So far the lines have held for one night.
+I use AI agents every day, on purpose. And every day I feel my brain wearing down. Running dozens of agents nonstop is not something I want to do.
 
-### Line 1. What it is allowed to do
+**The job**
 
-- The resident program has no special permission. It runs `herdr`, `ssh`, `open`, `lsappinfo`, `ioreg`, `who` and `caffeinate`. None of these need Accessibility or Automation permission. It does not use `osascript`.
-- It uses your existing ssh keys to run `herdr agent list` on the machines that are `enabled` in `herdr machine list`. Connections are shared, so this is not a new login every 2 seconds.
-- The one act that needs a permission, sending a keystroke, is done by a separate app, `~/Applications/Recess.app`. Its script is one line of AppleScript: `tell application "System Events" to key code 49` (49 is the space key); `osadecompile` shows it. Around that line, `install.sh` sets a bundle identifier (`jp.feel-physics.Recess`), hides the app from the Dock and signs it ad hoc. The resident program can only launch it. It cannot change what it does.
-- Two permissions go to Recess.app, and only to Recess.app: Accessibility (you add it by hand) and Automation for controlling System Events (a dialog the first time it presses space). Not to python3, not to your terminal.
+"While the AI works, I want to spend my own time. But the moment my judgment is needed, I want to be back, reliably."
 
-### Line 2. When it moves you
+This is not "make the AI faster" or "run more AI". It is turning waiting time into my time.
 
-"The tab you are looking at" below means the focused pane on the terminal where focus moved most recently (this Mac or a remote machine), together with the panes that sit in the same herdr tab. Two panes in one tab are judged as one.
+**What I used to hire**
 
-**To the video** (the side that can interrupt you) it is slow and asks for a lot:
+- Watching the screen. The most reliable, and the most tiring.
+- herdr's sounds and toasts. I know I was called. But to hear the sound, I stay near the terminal anyway.
+- My phone. I miss the call.
+- Starting another terminal job. That turns waiting for AI into running more AI. It goes the wearing-down way.
 
-- an agent in the tab you are looking at is `working`;
-- no pane in that tab is being read (see below);
-- no agent anywhere is `blocked` (asking you something) or `done` (finished, unread);
-- your hands have been off the keyboard and mouse for 3 seconds;
-- the frontmost app is a terminal;
-- at least 20 seconds have passed since Recess last called you back.
+None of them gave me both: leaving and coming back.
 
-Then it brings the browser forward (the one you last used; Safari until then), checks with `lsappinfo` that it really is frontmost, and presses space once. If the browser has not come forward within 3 seconds, it presses nothing and writes why to the log.
+**The four forces**
 
-It never goes to the video while the agents you are looking at are `idle`. That includes reading: a pane that just went from `done` or `working` to `idle` counts as being read until you move to another idle pane. It never goes while your hands are on the keys.
+| Force | What it is |
+|---|---|
+| Push | Waiting time disappears as blank. The fatigue of watching. Run several agents and there is more to watch |
+| Pull | A change of scene with a show. Half automatic, half forced (you can switch it off any time). When called, the show pauses and the terminal comes to front |
+| Anxiety | Agents keep running in the background while I watch a show, and I do not know what they are doing. And handing keystroke permission to a daemon an AI wrote |
+| Habit | Nothing needs automating. When the agent starts running, just open the book you were reading |
 
-**Back to the terminal** (the side you asked for) it is immediate:
+Recess exists because of three lines drawn against the anxieties.
 
-- a `blocked` or `done` appears that was not there 2 seconds ago, on any machine; or
-- a pane in the tab you are looking at goes from `working` to `idle` (herdr skips `done` when you are watching).
+**The offer: what Recess does**
 
-Then it wakes the display, presses space once if you are not on the terminal, waits 0.3 seconds, and brings the terminal forward. If you are already on the terminal it presses nothing. `blocked` or `done` that already existed when Recess started do not call you.
+- Only while an agent is working, it brings the browser to front and sends one space key. The show plays.
+- When an agent asks a question or finishes, it sends one more space key and brings the terminal to front. The show pauses.
+- The only thing that sends a key is `Recess.app`, a one-line AppleScript app. The Accessibility permission goes to that app and nothing else. The Python daemon gets none.
 
-One extra: when a pane on this Mac becomes `done`, your hands have been off for 3 seconds, and nobody is logged in over ssh (from a phone, say), it jumps to that pane with `herdr agent focus`.
+Three lines:
 
-### Line 3. How you come back
+1. What I hand over: an unattended process gets one line's worth of permission, no more.
+2. When I am called: leaving waits 3 seconds after my hands are off; calling back is immediate.
+3. How I come back: one space key, 0.3 seconds, terminal.
 
-Space once, 0.3 seconds, terminal. That is the whole return path.
+**Stopping**
 
-Space is a toggle. Recess does not know whether the video is playing. It sends one key at each transition and trusts that the video was paused while you were at the terminal. That is the deal you make with it: at the terminal, the video is paused.
+`recess off` makes it watch only. "That's enough for today" is your call.
+
+**Said plainly**
+
+The code was written by an AI. The purpose, the permissions, and the stopping were decided by me. Tested only with Safari and Netflix, macOS 14, herdr 0.9.1, on my one Mac. The space key is a toggle, so keep the video paused while you are at the terminal.
+
+I never watched Netflix. Now I watch it while the AI works. To me, that is surprising.
+
 
 ## State diagram
 
@@ -279,52 +289,62 @@ MIT. See [LICENSE](LICENSE).
 
 # Recess（日本語）
 
-AI エージェントが働いている間はブラウザで動画を流し、呼ばれたら動画を止めてターミナルへ戻す。
+**もがきの瞬間**
 
-Recess は、Mac のターミナルで [herdr](https://herdr.dev) を使って AI コーディングエージェントを動かしている人のためのものです。名前は、この仕組みの中で唯一許可が要る部分、スペースキーを押すだけの小さなアプリから来ています。
+夜。ターミナルの中で、AI エージェントがいくつか別々の仕事を進めている。私はその前に座っている。何もしていない。画面を見ているだけだ。
 
-## 何が起きるか
+呼ばれるのを待っている。質問が来るかもしれないし、終わるかもしれない。だから離れられない。離れたら、止まっているのに気づかない。でも見ていても、することはない。
 
-Recess は常駐プログラム（Python ファイル1つ。launchd が動かす）で、2秒おきに herdr へ「エージェントはいま何をしているか」を聞きます。この Mac と、herdr に登録した他のマシンの両方です。そして、作者が引いた3本の線に従います。線は少し動かせます（「設定」を見てください）。いまのところ、線は一晩持っています。
+AI を積極的に使っている。その一方で、毎日、頭がすり減っているのを感じる。AI を多数立ててひたすら回すのは、私はしたくない。
 
-### 線1 任せる範囲
+**進めたかったこと（ジョブ）**
 
-- 常駐プログラム自身には特別な許可がありません。動かすのは `herdr`, `ssh`, `open`, `lsappinfo`, `ioreg`, `who`, `caffeinate` だけ。どれもアクセシビリティ許可もオートメーション許可も要りません。`osascript` は使いません。
-- 他のマシンには、手元にある ssh 鍵を使って `herdr agent list` を実行しに行きます（`herdr machine list` で `enabled` のマシン）。接続は使い回すので、2秒ごとに新しいログインが起きるわけではありません。
-- 許可が要る唯一の動作、キーを送ることは、別のアプリ `~/Applications/Recess.app` がやります。スクリプトは AppleScript 1行だけ：`tell application "System Events" to key code 49`（49 はスペースキー）。`osadecompile` で確認できます。その1行のまわりに、`install.sh` が識別子（`jp.feel-physics.Recess`）を付け、Dock に出ないようにし、ad-hoc 署名をします。常駐プログラムにできるのは、このアプリを起動することだけ。中身を変えることはできません。
-- 許可は2つ、どちらも Recess.app にだけ出します。アクセシビリティ（手で追加する）と、System Events を制御するオートメーション（初めてスペースが送られるときのダイアログ）です。python3 にもターミナルにも出しません。
+「AI が働いている間、私は自分の時間を過ごしたい。ただし、私の判断が要る瞬間には、確実に戻りたい。」
 
-### 線2 呼ばれる時機
+これは「AI を速くする」でも「AI を増やす」でもない。待ち時間を、自分の時間に変えることだ。
 
-以下の「見ているタブ」とは、最後にフォーカスが動いた端末（この Mac でも他のマシンでも）でフォーカスされているペインと、herdr で同じタブに並んでいるペインのことです。同じタブの2ペインは一体として判断します。
+**それまで雇っていたもの**
 
-**動画へ連れて行く側**（あなたの邪魔になりうる側）は慎重で、条件が多い：
+- 画面を見続ける。いちばん確実で、いちばん疲れる。
+- herdr の効果音とトースト。呼ばれたことは分かる。でも音を聞くために、結局ターミナルの近くにいる。
+- スマホをいじる。呼ばれても気づかない。
+- 別のターミナルの仕事を始める。AI を待つ時間を、AI を増やす時間に変えてしまう。すり減るほうへ進む。
 
-- 見ているタブの AI が `working`
-- そのタブに読み中のペインが無い（下を参照）
-- どこにも `blocked`（質問中）や `done`（完了、未読）が無い
-- キーボードとマウスから手を離して3秒
-- 最前面がターミナル
-- 最後に呼び戻されてから20秒以上
+どれも「離れる」と「戻る」の両方は満たさなかった。
 
-そろったら、ブラウザ（最後に使っていたもの。それまでは Safari）を前に出し、本当に最前面になったことを `lsappinfo` で確かめてから、スペースを1回押します。3秒たっても前に出なければ、押さずにログに理由を書きます。
+**4つの力**
 
-見ているタブの AI が `idle` の間は動画へ行きません。読んでいる最中も含みます（`done` や `working` から `idle` になったペインは、別の idle ペインへ移るまで「読み中」）。手がキーに乗っている間も行きません。
+| 力 | 中身 |
+|---|---|
+| 押し出す力（Push） | 待ち時間が空白のまま消える。画面を見張る疲れ。複数のエージェントを回すと、見張る先が増える |
+| 引き寄せる力（Pull） | 動画を見て気分転換できる。半ば自動的に、半ば強制的に（任意にオフにできる）。呼ばれたら動画が止まり、ターミナルが前に出る |
+| 不安（Anxiety） | 動画を見ている間に、裏で AI エージェントを走らせること。何をしているか、わからない。そして、AI に書かせた常駐にキー操作の権限を渡すこと |
+| 慣れ（Habit） | 自動化する必要はない。AI エージェントが走り始めたら、読みかけの本を開いて読めばいい |
 
-**ターミナルへ呼び戻す側**（あなたが頼んだ側）は即時：
+Recess は、不安に対して3本の線を引くことで成り立っている。
 
-- 2秒前には無かった `blocked` か `done` が、どこかのマシンに現れた
-- 見ているタブのペインが `working` から `idle` になった（見ている最中に終わると herdr は `done` を飛ばします）
+**提案：Recess がすること**
 
-このとき、画面を点け、ターミナルを見ていなければスペースを1回、0.3秒待ってターミナルを前に出します。すでにターミナルを見ていれば何も押しません。Recess が起動したときに既にあった `blocked` / `done` では呼びません。
+- AI が働いている間だけ、ブラウザを前に出してスペースキーを1回送る。動画が動く。
+- AI が質問したか、終わったら、スペースをもう1回送って、ターミナルを前に出す。動画が止まる。
+- キーを送るのは、AppleScript 1行のアプリ `Recess.app` だけ。アクセシビリティの許可はこのアプリにだけ出す。常駐の python3 には何も渡さない。
 
-もう1つ：この Mac のペインが `done` になり、手を離して3秒以上、ssh ログイン（スマホなど）が無ければ、`herdr agent focus` でそのペインへ飛びます。
+線は3本。
 
-### 線3 戻り方
+1. 任せる範囲：無人で動くものには1行ぶんの権限しか渡さない。
+2. 呼ばれる時機：連れ出す側は手を離して3秒待つ。呼び戻す側は即時。
+3. 戻り方：スペース1回、0.3秒、ターミナル。
 
-スペース1回、0.3秒、ターミナル。戻り道はこれだけです。
+**やめ時**
 
-スペースは切り替えです。Recess は動画が再生中かどうかを知りません。状態が変わった瞬間に1回キーを送るだけで、ターミナルにいる間は動画が止まっていたと信じています。それが Recess との約束です：ターミナルにいるとき、動画は止めておく。
+`recess off` で見張るだけになる。今日はここまで、はあなたが決める。
+
+**正直に書いておくこと**
+
+コードは AI に書かせ、目的・権限・止め方を決めたのは私だ。確かめたのは Safari と Netflix、macOS 14、herdr 0.9.1、私の Mac 1台だけ。スペースは切り替えなので、ターミナルにいる間は動画を止めておく約束が要る。
+
+もともと私は Netflix をまったく見ない人間だった。それが、AI が働いている間に Netflix を楽しんでいる。私にとっては驚くべきことだ。
+
 
 ## 状態遷移図
 
