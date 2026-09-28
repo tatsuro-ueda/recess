@@ -226,8 +226,8 @@ LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   #
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 
-ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")
-ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る   # このファイルを作ると「Moving to ◯◯」の通知を止める
+ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「Moving to ◯◯」の通知を止める
+ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
 
 
 def notify(title, body):
