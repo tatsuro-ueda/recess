@@ -39,6 +39,8 @@ stateDiagram-v2
         A done pane on this Mac: focus it after 3 s hands-off (not when an SSH login is present).
         Any one of blocked / done / reading keeps you in foreground.
         blocked and done are checked on every machine; reading only in the tab you are looking at.
+        A reading pane shows `You are reading...` in place of its idle label, because herdr
+        reports reading as plain idle and nothing on screen tells the two apart.
     end note
 
     note right of bg
@@ -69,7 +71,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_VIDEO_APP` | (empty) | Force one browser, e.g. `Safari`. Empty = the browser you last used, Safari until then. |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Recess has seen you on a terminal. |
 | `RECESS_ANNOUNCE_SECONDS` | `5` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
-| `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing and switch nothing. |
+| `RECESS_READING_LABEL` | `You are reading...` | What a reading pane shows in place of `idle`. Empty = leave the label alone. |
+| `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing, switch nothing and change no label. |
 
 A good first day: `RECESS_DRY_RUN=1`, read the log, then turn it on.
 
@@ -120,6 +123,7 @@ herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/
 
 ## Known weaknesses
 
+- The reading label needs `herdr pane report-metadata` (herdr 0.9.1). On a herdr without it the call fails, the label never appears, and only `watch.log` says so.
 - Space is a toggle. Pause or play by hand and the next press goes the wrong way. Recess never reads playback state; keep the video paused while you are at the terminal.
 - Tried with Safari and Netflix only. Other sites or players may not bind space to play/pause, or may not have the video focused.
 - "Browser is frontmost" does not mean "right tab, video focused". If a text field or another tab has focus, space goes there.
@@ -177,6 +181,8 @@ stateDiagram-v2
         この Mac の done ペインは、手を離して3秒以上でそのペインへ移る（SSH ログイン中は移らない）。
         blocked・done・reading のどれか1つでも残っていれば foreground。
         blocked と done は全マシン、reading は見ているタブだけを見る。
+        reading のペインは状態表示が `You are reading...` に変わる。herdr から見ると
+        reading は idle そのもので、画面では見分けられないため。
     end note
 
     note right of bg
@@ -207,7 +213,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_VIDEO_APP` | （空） | ブラウザを決め打ちする（例 `Safari`）。空なら最後に使ったブラウザ、それまでは Safari。 |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
 | `RECESS_ANNOUNCE_SECONDS` | `5` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
-| `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず何も切り替えない。 |
+| `RECESS_READING_LABEL` | `You are reading...` | 読み中のペインが `idle` の代わりに出す文言。空にすると差し替えない。 |
+| `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず、何も切り替えず、表示も差し替えない。 |
 
 最初の1日は `RECESS_DRY_RUN=1` でログだけ読み、それから本番にするのがおすすめです。
 
@@ -258,6 +265,7 @@ herdr はエージェントが終わったときと質問したときに音を�
 
 ## 分かっている弱点
 
+- 読み中の表示は `herdr pane report-metadata`（herdr 0.9.1）に頼っている。無い herdr では呼び出しが失敗し、表示は出ないまま `watch.log` にだけ残る。
 - スペースは切り替えです。手で止めたり再生したりすると、次の1回が逆に効きます。Recess は再生状態を読みません。ターミナルにいる間は動画を止めておいてください。
 - 確かめたのは Safari と Netflix だけ。他のサイトやプレーヤーではスペースが再生／停止に割り当てられていなかったり、動画にフォーカスが無かったりします。
 - 「ブラウザが最前面」は「正しいタブで動画にフォーカスがある」と同じではありません。文字入力欄や別のタブにフォーカスがあれば、スペースはそこへ行きます。

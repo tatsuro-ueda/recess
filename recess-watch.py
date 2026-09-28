@@ -19,6 +19,10 @@
   猶予     : 呼び戻し後 RETURN_COOLDOWN 秒はブラウザへ行かない（既定 0）。
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
              見ている端末で別の idle ペインへ移ったら終わる。
+             読み中のあいだは、そのペインの状態表示を「You are reading...」に差し替える
+             （herdr pane report-metadata の display-only な state_label。TTL 付きなので
+             常駐が落ちたら自然に消える）。idle と reading は herdr から見ると同じ idle で、
+             画面では見分けられないため（ユーザー報告 2026-09-28）。
   ジャンプ : Mac のペインが done になったら herdr agent focus で自動ジャンプ
              （手を離して HANDS_OFF 秒以上、who に SSH ログインが無いとき）。
 
@@ -65,7 +69,8 @@
                                 （既定 "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge"）
   RECESS_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
   RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
-  RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus を実行しない
+  RECESS_READING_LABEL           読み中のペインに出す文言（既定 "You are reading..."。空にすると出さない）
+  RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
 
 状態は毎回の差分（前回→今回）で見る。
 """
@@ -73,6 +78,7 @@ import datetime
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import time
@@ -166,11 +172,16 @@ def machines():
     return result
 
 
-def remote_agents(target):
+def ssh_herdr(target, remote_cmd):
+    """他マシンの herdr を叩く。状態収集と表示の差し替えで同じ経路（多重化した ssh）を使う。"""
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ControlMaster=auto", "-o", f"ControlPath={SSH_CTL}",
            "-o", "ControlPersist=600", "-o", "ConnectTimeout=5", "-o", "ServerAliveInterval=15",
-           "-o", "LogLevel=ERROR", target, "herdr agent list"]
-    rc, out, _ = run(cmd, timeout=10)
+           "-o", "LogLevel=ERROR", target, remote_cmd]
+    return run(cmd, timeout=10)
+
+
+def remote_agents(target):
+    rc, out, _ = ssh_herdr(target, "herdr agent list")
     return parse_agents(out) if rc == 0 else None
 
 
@@ -228,6 +239,9 @@ TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「Moving to ◯◯」の通知を止める
 ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
+
+READING_LABEL = os.environ.get("RECESS_READING_LABEL", "You are reading...")   # 読み中の状態表示。空で出さない
+READING_TTL = max(POLL * 6, 15.0)   # 秒。貼り直しの間隔より長くし、常駐が落ちたら TTL 切れで消える
 
 
 def notify(title, body):
@@ -326,6 +340,8 @@ class Watcher:
         self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
         self.tab_of = {}             # key -> "endpoint/tab_id"（同じタブの2ペインは一体で判断する）
         self.fg_prev = None          # 前回 foreground だったか（None は起動直後）
+        self.labeled = {}       # key -> 最後に state_label を貼った時刻（monotonic）
+        self.targets = {}       # endpoint -> ssh の接続先（local は持たない）
         self.remote_cache = {}  # label -> (agents, time)
         self.remote_down = set()
         self.last_summary = ""
@@ -335,6 +351,7 @@ class Watcher:
         eps = {"local": local_agents()}
         now = time.time()
         for label, target in machines():
+            self.targets[label] = target
             ag = remote_agents(target)
             if ag is None:
                 cached = self.remote_cache.get(label)
@@ -350,6 +367,48 @@ class Watcher:
                     self.remote_down.discard(label)
             eps[label] = ag
         return eps
+
+    # ---------- 読み中の表示 ----------
+
+    def report_metadata(self, key, args):
+        """display-only なペイン情報を書く。他マシンぶんは状態収集と同じ ssh で流す。"""
+        ep, pane_id = key.split("/", 1)
+        argv = ["pane", "report-metadata", pane_id] + args   # pane_id が先。= 形式のオプションは通らない
+        if ep == "local":
+            return run([HERDR] + argv, timeout=5)
+        target = self.targets.get(ep)
+        if not target:
+            return -1, "", f"no ssh target for {ep}"
+        return ssh_herdr(target, " ".join(["herdr"] + [shlex.quote(a) for a in argv]))
+
+    def sync_reading_labels(self):
+        """読み中のペインだけ状態表示を差し替える。idle と reading は herdr から見ると同じなので、
+        ここだけが画面上の見分け方になる。"""
+        if not READING_LABEL:
+            return
+        at = time.monotonic()
+        for key in sorted(self.reading):
+            if at - self.labeled.get(key, -1e9) < READING_TTL / 3:
+                continue   # まだ有効。貼り直しは TTL の 1/3 ごと
+            if DRY_RUN:
+                self.labeled[key] = at
+                continue
+            rc, _, err = self.report_metadata(key, [
+                "--source", "recess", "--state-label", f"idle={READING_LABEL}",
+                "--ttl-ms", str(int(READING_TTL * 1000))])
+            if rc == 0:
+                if key not in self.labeled:
+                    log(f"LABEL {key} -> {READING_LABEL!r}")
+                self.labeled[key] = at
+            else:
+                log(f"LABEL {key} failed: {err.strip()[:120]}")
+        for key in [k for k in self.labeled if k not in self.reading]:
+            self.labeled.pop(key, None)
+            if DRY_RUN:
+                continue
+            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-state-labels"])
+            # 消せなくても TTL で消えるので、記録だけ残して先へ進む
+            log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
 
     def tick(self):
         enabled = not os.path.exists(OFF_FILE)
@@ -402,6 +461,7 @@ class Watcher:
         if afp and now.get(afp) == "idle" and afp not in self.reading:
             self.reading = {k for k in self.reading if not k.startswith(self.active + "/")}
         self.reading = {k for k in self.reading if now.get(k) == "idle"}
+        self.sync_reading_labels()
 
         changed = (now != self.prev) or (focus != self.prev_focus)
         attention = [k for k, s in now.items() if s in ("blocked", "done")]
