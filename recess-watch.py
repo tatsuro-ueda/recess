@@ -253,6 +253,8 @@ def toggle_video(why):
                 break
             time.sleep(min(1.0, left))
             if hid_idle() < 1:      # 読んでいる間に手が戻ったら行かない。次に手が止まればまた知らせる
+                # 予告を読んだ人が「結局どうなったか」を知れるようにする（ユーザー報告 2026-09-28）
+                notify("Recess", "Moving is cancelled")
                 log(f"TOGGLE {why} -> cancelled: hands back on")
                 return "cancelled"
     rc, _, err = run(["open", "-a", target], timeout=5)
