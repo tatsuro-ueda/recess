@@ -68,6 +68,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | App names counted as "browser", comma-separated. Only these are remembered as the place to return the video to. |
 | `RECESS_VIDEO_APP` | (empty) | Force one browser, e.g. `Safari`. Empty = the browser you last used, Safari until then. |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Recess has seen you on a terminal. |
+| `RECESS_ANNOUNCE_SECONDS` | `5` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
 | `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing and switch nothing. |
 
 A good first day: `RECESS_DRY_RUN=1`, read the log, then turn it on.
@@ -76,7 +77,7 @@ A good first day: `RECESS_DRY_RUN=1`, read the log, then turn it on.
 
 Log: `~/.local/state/recess/watch.log`. Most lines start with `state:` (a status summary, written when it changes), `PLAY`, `RETURN`, `TOGGLE`, `JUMP`, `WAKE`, or `remote <name>: unreachable` / `back`. launchd's own output goes to `watch.stdout.log` and `watch.stderr.log` in the same directory; look at `watch.stderr.log` when it does not start.
 
-Each `TOGGLE` line names the app the space key was sent to (`target=Comet (front=iTerm2)`), and when it moves to the video it also shows a notification saying where it went. That is how you catch a space key landing on the wrong window. To silence the notification: `touch ~/.local/state/recess/announce-off`.
+Each `TOGGLE` line names the app the space key was sent to (`target=Comet (front=iTerm2)`). Before it moves, a notification says `Moving to Comet in 5s` and it waits that long, so you can read where it is about to go — a notification shown after the switch arrives too late to read. If you touch the keyboard while it waits, it does not go (`cancelled: hands back on` in the log) and announces again once your hands rest. That is how you catch a space key landing on the wrong window. To silence the notification (and the wait): `touch ~/.local/state/recess/announce-off`.
 
 ```sh
 tail -f ~/.local/state/recess/watch.log          # watch it decide
@@ -205,6 +206,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | 「ブラウザ」とみなすアプリ名。カンマ区切り。動画の戻り先として覚えるのはこれらだけ。 |
 | `RECESS_VIDEO_APP` | （空） | ブラウザを決め打ちする（例 `Safari`）。空なら最後に使ったブラウザ、それまでは Safari。 |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
+| `RECESS_ANNOUNCE_SECONDS` | `5` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
 | `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず何も切り替えない。 |
 
 最初の1日は `RECESS_DRY_RUN=1` でログだけ読み、それから本番にするのがおすすめです。
@@ -213,7 +215,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 
 ログ：`~/.local/state/recess/watch.log`。行頭はおもに `state:`（状態の要約。変わったときだけ書く）、`PLAY`、`RETURN`、`TOGGLE`、`JUMP`、`WAKE`、`remote <名前>: unreachable` / `back` のどれかです。launchd 自身の出力は同じフォルダの `watch.stdout.log` と `watch.stderr.log` に出ます。起動しないときは `watch.stderr.log` を見てください。
 
-`TOGGLE` の行には、スペースを送った相手のアプリ名が残ります（`target=Comet (front=iTerm2)`）。動画へ行くときは「Comet へ移ります」と通知も出ます。スペースが別のウィンドウへ飛んでいるときは、これで気づけます。通知がうるさいときは `touch ~/.local/state/recess/announce-off` で止まります。
+`TOGGLE` の行には、スペースを送った相手のアプリ名が残ります（`target=Comet (front=iTerm2)`）。移る**前**に「`Moving to Comet in 5s`」と通知を出し、その秒数だけ待ってから移ります（移ったあとに出しても、画面が変わっているので読めません）。待っている間に手を動かしたら移りません（ログは `cancelled: hands back on`）。次に手が止まれば、また知らせてから移ります。スペースが別のウィンドウへ飛んでいるときは、これで気づけます。通知と待ち時間がうるさいときは `touch ~/.local/state/recess/announce-off` で止まります。
 
 ```sh
 tail -f ~/.local/state/recess/watch.log          # 判断を眺める

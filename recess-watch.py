@@ -226,7 +226,8 @@ LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   #
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 
-ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「◯◯へ移ります」の通知を止める
+ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")
+ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る   # このファイルを作ると「Moving to ◯◯」の通知を止める
 
 
 def notify(title, body):
@@ -241,41 +242,54 @@ def toggle_video(why):
     # Python は open / lsappinfo だけを使う。キー送信の権限は Recess.app が持つ。
     target = video_app()
     log(f"TOGGLE {why} -> target={target} (front={front_app()})")
+    if why == "play" and ANNOUNCE_SECONDS > 0 and not os.path.exists(ANNOUNCE_OFF):
+        # 画面が移る前に知らせる。移ってから出しても、もう読めない（ユーザー報告 2026-09-28）
+        notify("Recess", f"Moving to {target} in {ANNOUNCE_SECONDS:g}s")
+        log(f"TOGGLE {why} -> announced {target}, waiting {ANNOUNCE_SECONDS:g}s")
+        deadline = time.monotonic() + ANNOUNCE_SECONDS
+        while True:
+            left = deadline - time.monotonic()
+            if left <= 0:
+                break
+            time.sleep(min(1.0, left))
+            if hid_idle() < 1:      # 読んでいる間に手が戻ったら行かない。次に手が止まればまた知らせる
+                log(f"TOGGLE {why} -> cancelled: hands back on")
+                return "cancelled"
     rc, _, err = run(["open", "-a", target], timeout=5)
     if rc != 0:
         log(f"TOGGLE {why} -> skipped: cannot open {target}: {err.strip()[:80]}")
         if why == "play":
-            notify("Recess", f"{target} を開けませんでした")
+            notify("Recess", f"Could not open {target}")
         return False
     deadline = time.monotonic() + 3
     while front_app() != target:
         if time.monotonic() >= deadline:
             log(f"TOGGLE {why} -> skipped: {target} did not become frontmost")
             if why == "play":
-                notify("Recess", f"{target} を前に出せませんでした")
+                notify("Recess", f"Could not bring {target} to the front")
             return False
         time.sleep(0.1)
     time.sleep(0.2)
     if front_app() != target:
         log(f"TOGGLE {why} -> skipped: focus left {target}")
         if why == "play":
-            notify("Recess", f"{target} から焦点が外れました")
+            notify("Recess", f"Focus left {target}")
         return False
     rc, _, err = run(["open", "-g", "-W", SPACE_APP], timeout=15)
     # open の終了コードはアプレットの終了だけを示す。動画の再生状態は検証できない。
     result = "helper exited (playback unverified)" if rc == 0 else err.strip()[:80]
     log(f"TOGGLE {why} -> {target}: {result}")
-    if why == "play":
-        notify("Recess", f"{target} へ移ります" if rc == 0 else f"{target} でスペースを送れませんでした")
+    if why == "play" and rc != 0:
+        notify("Recess", f"Could not send space to {target}")
     return rc == 0
 
 
 def video_play(reason):
-    """ブラウザを前に出し、専用アプリからスペースを送る。"""
+    """ブラウザを前に出し、専用アプリからスペースを送る。中止したときは "cancelled" を返す。"""
     log(f"PLAY  {reason}")
     if DRY_RUN:
-        return
-    toggle_video("play")
+        return True
+    return toggle_video("play")
 
 
 def video_pause_and_return(reason):
@@ -463,8 +477,8 @@ class Watcher:
                 pass                        # 呼び戻した直後は、AIが続けて聞いてくるかを見る猶予
             elif idle >= HANDS_OFF:
                 if app in TERMINAL_APPS:
-                    video_play(f"{self.active} {afp}:{fs} hands-off={idle}s front={app}")
-                    self.pending_off = False
+                    if video_play(f"{self.active} {afp}:{fs} hands-off={idle}s front={app}") != "cancelled":
+                        self.pending_off = False
                 else:
                     if getattr(self, "_front_logged", None) != app:
                         log(f"front app is {app} -> keep waiting")
