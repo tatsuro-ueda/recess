@@ -6,6 +6,8 @@ English first, 日本語は後半（[日本語へ](#recess-仕様詳細日本語
 
 How it decides. Two big states, and Recess only moves you on the transitions between them.
 
+Recess reads only what herdr reports for each pane, so it does not know what kind of work an agent is doing. A side conversation (Claude Code's `/btw`) is treated exactly like any other turn: the pane goes `working` when it starts and `done` when it ends. One caveat: a turn that finishes in under two seconds can slip between polls and never be seen as `working`.
+
 ```mermaid
 stateDiagram-v2
     direction TB
@@ -138,6 +140,8 @@ herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/
 ## 状態遷移図
 
 どう判断しているか。大きな状態は2つだけで、Recess があなたを動かすのは、その間の遷移のときだけです。
+
+Recess が読むのは herdr が返すペインの状態だけなので、AI が何の仕事をしているかは分かりません。サイド会話（Claude Code の `/btw`）も普通のやり取りと同じ扱いで、始まれば `working`、終われば `done` になります。ただし2秒たらずで終わるやり取りは、2秒おきの見回りをすり抜けて `working` として見えないことがあります。
 
 ```mermaid
 stateDiagram-v2
