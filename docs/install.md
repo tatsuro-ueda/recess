@@ -19,7 +19,7 @@ curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.s
 sh install.sh
 ```
 
-Source and install files live on GitHub. The same file is also mirrored at `recess.feel-physics.jp` once that domain is live:
+Source and install files live on GitHub:
 
 ```sh
 curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh
@@ -119,7 +119,7 @@ curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.s
 sh install.sh
 ```
 
-ソースと導入ファイルの正本は GitHub です。`recess.feel-physics.jp` が開通したら、同じものがそこにも出ます：
+ソースと導入ファイルの正本は GitHub です：
 
 ```sh
 curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.sh
