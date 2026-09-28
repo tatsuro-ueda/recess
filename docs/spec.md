@@ -76,6 +76,8 @@ A good first day: `RECESS_DRY_RUN=1`, read the log, then turn it on.
 
 Log: `~/.local/state/recess/watch.log`. Most lines start with `state:` (a status summary, written when it changes), `PLAY`, `RETURN`, `TOGGLE`, `JUMP`, `WAKE`, or `remote <name>: unreachable` / `back`. launchd's own output goes to `watch.stdout.log` and `watch.stderr.log` in the same directory; look at `watch.stderr.log` when it does not start.
 
+Each `TOGGLE` line names the app the space key was sent to (`target=Comet (front=iTerm2)`), and when it moves to the video it also shows a notification saying where it went. That is how you catch a space key landing on the wrong window. To silence the notification: `touch ~/.local/state/recess/announce-off`.
+
 ```sh
 tail -f ~/.local/state/recess/watch.log          # watch it decide
 launchctl print gui/$(id -u)/jp.feel-physics.recess | grep state   # is it running?
@@ -210,6 +212,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 ## ログと止め方・削除
 
 ログ：`~/.local/state/recess/watch.log`。行頭はおもに `state:`（状態の要約。変わったときだけ書く）、`PLAY`、`RETURN`、`TOGGLE`、`JUMP`、`WAKE`、`remote <名前>: unreachable` / `back` のどれかです。launchd 自身の出力は同じフォルダの `watch.stdout.log` と `watch.stderr.log` に出ます。起動しないときは `watch.stderr.log` を見てください。
+
+`TOGGLE` の行には、スペースを送った相手のアプリ名が残ります（`target=Comet (front=iTerm2)`）。動画へ行くときは「Comet へ移ります」と通知も出ます。スペースが別のウィンドウへ飛んでいるときは、これで気づけます。通知がうるさいときは `touch ~/.local/state/recess/announce-off` で止まります。
 
 ```sh
 tail -f ~/.local/state/recess/watch.log          # 判断を眺める

@@ -226,28 +226,47 @@ LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   #
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 
+ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「◯◯へ移ります」の通知を止める
+
+
+def notify(title, body):
+    """どのアプリへ移るかを画面に出す。ターミナルを見ていないときに気づけるのが目的。"""
+    if os.path.exists(ANNOUNCE_OFF):
+        return
+    run([HERDR, "notification", "show", title, "--body", body], timeout=5)
+
+
 def toggle_video(why):
     """権限不要の open で前面化を確認し、専用アプリからスペースを1回送る。"""
     # Python は open / lsappinfo だけを使う。キー送信の権限は Recess.app が持つ。
     target = video_app()
+    log(f"TOGGLE {why} -> target={target} (front={front_app()})")
     rc, _, err = run(["open", "-a", target], timeout=5)
     if rc != 0:
         log(f"TOGGLE {why} -> skipped: cannot open {target}: {err.strip()[:80]}")
+        if why == "play":
+            notify("Recess", f"{target} を開けませんでした")
         return False
     deadline = time.monotonic() + 3
     while front_app() != target:
         if time.monotonic() >= deadline:
             log(f"TOGGLE {why} -> skipped: {target} did not become frontmost")
+            if why == "play":
+                notify("Recess", f"{target} を前に出せませんでした")
             return False
         time.sleep(0.1)
     time.sleep(0.2)
     if front_app() != target:
         log(f"TOGGLE {why} -> skipped: focus left {target}")
+        if why == "play":
+            notify("Recess", f"{target} から焦点が外れました")
         return False
     rc, _, err = run(["open", "-g", "-W", SPACE_APP], timeout=15)
     # open の終了コードはアプレットの終了だけを示す。動画の再生状態は検証できない。
     result = "helper exited (playback unverified)" if rc == 0 else err.strip()[:80]
-    log(f"TOGGLE {why} -> {result}")
+    log(f"TOGGLE {why} -> {target}: {result}")
+    if why == "play":
+        notify("Recess", f"{target} へ移ります" if rc == 0 else f"{target} でスペースを送れませんでした")
     return rc == 0
 
 
