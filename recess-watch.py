@@ -329,8 +329,11 @@ def video_pause_and_return(reason):
 
 def jump(pane_id, reason):
     log(f"JUMP  -> {pane_id} {reason}")
-    if not DRY_RUN:
-        run([HERDR, "agent", "focus", pane_id], timeout=5)
+    if DRY_RUN:
+        return
+    rc, _, err = run([HERDR, "agent", "focus", pane_id], timeout=5)
+    if rc != 0:   # 失敗しても JUMP と記録されていたので、結果まで残す
+        log(f"JUMP  -> {pane_id} failed: {err.strip()[:120]}")
 
 
 # ---------- 判定 ----------
@@ -494,6 +497,10 @@ class Watcher:
             self.pending_off = False
         elif new_attention or finished_in_view:
             why = f"new attention: {new_attention}" if new_attention else f"finished in view: {finished_in_view}"
+            # 手を離していたかは「呼び戻す前」に測る。呼び戻しで自分がスペースを押すと
+            # HID の idle が 0 に戻り、動画を見ていた人まで「手が乗っている」と誤判定するため
+            # （2026-09-29 に判明。ブラウザから呼び戻した直後の誤判定が79回ログに残っていた）。
+            idle_before = hid_idle()
             wake(why)
             self.pending_off = False
             video_pause_and_return(why)
@@ -502,10 +509,10 @@ class Watcher:
                 if k.startswith("local/") and now[k] in ("done", "blocked"):
                     if ssh_login_present():
                         log("no jump: ssh login present")
-                    elif hid_idle() >= HANDS_OFF:
-                        jump(k.split("/", 1)[1], f"(hands-off {hid_idle()}s)")
+                    elif idle_before >= HANDS_OFF:
+                        jump(k.split("/", 1)[1], f"(hands-off {idle_before:.0f}s)")
                     else:
-                        log("no jump: hands on")
+                        log(f"no jump: hands on ({idle_before:.0f}s)")
 
         # ブラウザへ行ってよいか
         fs = fstat.get(self.active)
