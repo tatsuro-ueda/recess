@@ -19,10 +19,12 @@
   猶予     : 呼び戻し後 RETURN_COOLDOWN 秒はブラウザへ行かない（既定 0）。
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
              見ている端末で別の idle ペインへ移ったら終わる。
-             読み中のあいだは、そのペインの状態表示を「You are reading...」に差し替える
-             （herdr pane report-metadata の display-only な state_label。TTL 付きなので
-             常駐が落ちたら自然に消える）。idle と reading は herdr から見ると同じ idle で、
+             読み中のあいだは、サイドバーのエージェント名（claude など）を「You are reading...」
+             に差し替える（herdr pane report-metadata の display-only な display_agent。TTL 付き
+             なので常駐が落ちたら自然に消える）。idle と reading は herdr から見ると同じ idle で、
              画面では見分けられないため（ユーザー報告 2026-09-28）。
+             状態の文字（state_label）を使わないのは、サイドバーの行に state_text を入れていないと
+             どこにも出ないため（2026-09-29 実測。既定の行構成も state_icon だけ）。
   ジャンプ : Mac のペインが blocked / done になったら herdr agent focus で自動ジャンプ
              （手を離して HANDS_OFF 秒以上、who に SSH ログインが無いとき）。
              呼び戻しだけではターミナルが前に出るところまでで、どのペインが呼んだかは
@@ -385,8 +387,10 @@ class Watcher:
         return ssh_herdr(target, " ".join(["herdr"] + [shlex.quote(a) for a in argv]))
 
     def sync_reading_labels(self):
-        """読み中のペインだけ状態表示を差し替える。idle と reading は herdr から見ると同じなので、
-        ここだけが画面上の見分け方になる。"""
+        """読み中のペインだけ、サイドバーのエージェント名を読み中の文言へ差し替える。
+        idle と reading は herdr から見ると同じなので、ここだけが画面上の見分け方になる。
+        状態表示（state_label）ではなくエージェント名（display_agent）を使うのは、
+        サイドバーの行構成に state_text が無いと状態の文字がどこにも出ないため（2026-09-29 実測）。"""
         if not READING_LABEL:
             return
         at = time.monotonic()
@@ -397,7 +401,7 @@ class Watcher:
                 self.labeled[key] = at
                 continue
             rc, _, err = self.report_metadata(key, [
-                "--source", "recess", "--state-label", f"idle={READING_LABEL}",
+                "--source", "recess", "--display-agent", READING_LABEL,
                 "--ttl-ms", str(int(READING_TTL * 1000))])
             if rc == 0:
                 if key not in self.labeled:
@@ -409,7 +413,7 @@ class Watcher:
             self.labeled.pop(key, None)
             if DRY_RUN:
                 continue
-            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-state-labels"])
+            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-display-agent"])
             # 消せなくても TTL で消えるので、記録だけ残して先へ進む
             log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
 
