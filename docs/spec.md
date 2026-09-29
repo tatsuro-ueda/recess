@@ -29,7 +29,7 @@ stateDiagram-v2
 
     [*] --> bg
     bg --> fg : a new blocked / a new done / a pane in your tab goes working → idle
-    fg --> bg : you answer the blocked / you send the next prompt from reading / you move from reading to another idle pane
+    fg --> bg : you answer the blocked / you send the next prompt from reading / you move from reading to another pane
 
     note right of fg
         On entering (call-back)
@@ -40,8 +40,9 @@ stateDiagram-v2
         Panes on other machines are never focused (the local herdr does not hold them).
         Any one of blocked / done / reading keeps you in foreground.
         blocked and done are checked on every machine; reading only in the tab you are looking at.
-        A reading pane shows `You are reading...` in place of its agent name in the sidebar,
+        The reading pane you are looking at shows `You are reading...` in place of its agent name,
         because herdr reports reading as plain idle and nothing on screen tells the two apart.
+        Only one pane ever carries it: the focused pane on the machine you are at. There is one of you.
     end note
 
     note right of bg
@@ -172,7 +173,7 @@ stateDiagram-v2
 
     [*] --> bg
     bg --> fg : 新しい blocked／新しい done／見ているタブのペインが working → idle
-    fg --> bg : blocked に答える／reading で次のプロンプトを送る／reading から別の idle ペインへ移る
+    fg --> bg : blocked に答える／reading で次のプロンプトを送る／reading から別のペインへ移る
 
     note right of fg
         入るとき（呼び戻し）
@@ -183,8 +184,9 @@ stateDiagram-v2
         他マシンのペインへは移らない（ローカルの herdr がそのペインを持っていない）。
         blocked・done・reading のどれか1つでも残っていれば foreground。
         blocked と done は全マシン、reading は見ているタブだけを見る。
-        reading のペインは、サイドバーのエージェント名が `You are reading...` に変わる。
+        いま見ている reading のペインは、サイドバーのエージェント名が `You are reading...` に変わる。
         herdr から見ると reading は idle そのもので、画面では見分けられないため。
+        印が付くのは常に1つだけ（見ている端末の、開いているペイン）。読む人は1人しかいない。
     end note
 
     note right of bg

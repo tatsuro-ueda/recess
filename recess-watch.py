@@ -18,7 +18,8 @@
              →0.3秒→ターミナルを前に出す。ターミナルを見ているなら押さない。
   猶予     : 呼び戻し後 RETURN_COOLDOWN 秒はブラウザへ行かない（既定 0）。
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
-             見ている端末で別の idle ペインへ移ったら終わる。
+             見ている端末で別のペインへ移ったら終わる。
+             画面に印を出すのは、そのうち「いま開いているペイン」1つだけ（読む人は1人）。
              読み中のあいだは、サイドバーのエージェント名（claude など）を「You are reading...」
              に差し替える（herdr pane report-metadata の display-only な display_agent。TTL 付き
              なので常駐が落ちたら自然に消える）。idle と reading は herdr から見ると同じ idle で、
@@ -389,15 +390,19 @@ class Watcher:
             return -1, "", f"no ssh target for {ep}"
         return ssh_herdr(target, " ".join(["herdr"] + [shlex.quote(a) for a in argv]))
 
-    def sync_reading_labels(self):
+    def sync_reading_labels(self, focused_key):
         """読み中のペインだけ、サイドバーのエージェント名を読み中の文言へ差し替える。
         idle と reading は herdr から見ると同じなので、ここだけが画面上の見分け方になる。
         状態表示（state_label）ではなくエージェント名（display_agent）を使うのは、
         サイドバーの行構成に state_text が無いと状態の文字がどこにも出ないため（2026-09-29 実測）。"""
         if not READING_LABEL:
             return
+        # 読んでいる人は1人しかいない。印を出すのは「見ている端末で、いま開いているペイン」だけ。
+        # reading 集合そのものは複数持つ（同じタブの相方や他マシンぶんも判定に使う）が、
+        # 画面に3つ同時に出ると、どれを読んでいるのか分からなくなる（ユーザー報告 2026-09-29）。
+        wanted = {focused_key} if focused_key in self.reading else set()
         at = time.monotonic()
-        for key in sorted(self.reading):
+        for key in sorted(wanted):
             if at - self.labeled.get(key, -1e9) < READING_TTL / 3:
                 continue   # まだ有効。貼り直しは TTL の 1/3 ごと
             if DRY_RUN:
@@ -412,7 +417,7 @@ class Watcher:
                 self.labeled[key] = at
             else:
                 log(f"LABEL {key} failed: {err.strip()[:120]}")
-        for key in [k for k in self.labeled if k not in self.reading]:
+        for key in [k for k in self.labeled if k not in wanted]:
             self.labeled.pop(key, None)
             if DRY_RUN:
                 continue
@@ -468,10 +473,10 @@ class Watcher:
                     self.reading.add(k)
         # reading の終了: 見ている端末で別の idle ペインへ移った / reading ペインが idle でなくなった
         afp = focus.get(self.active)
-        if afp and now.get(afp) == "idle" and afp not in self.reading:
+        if afp and afp not in self.reading:   # 移った先の状態は問わない（working のペインへ移っても読み終わり）
             self.reading = {k for k in self.reading if not k.startswith(self.active + "/")}
         self.reading = {k for k in self.reading if now.get(k) == "idle"}
-        self.sync_reading_labels()
+        self.sync_reading_labels(focus.get(self.active))
 
         changed = (now != self.prev) or (focus != self.prev_focus)
         attention = [k for k, s in now.items() if s in ("blocked", "done")]
