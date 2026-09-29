@@ -23,8 +23,11 @@
              （herdr pane report-metadata の display-only な state_label。TTL 付きなので
              常駐が落ちたら自然に消える）。idle と reading は herdr から見ると同じ idle で、
              画面では見分けられないため（ユーザー報告 2026-09-28）。
-  ジャンプ : Mac のペインが done になったら herdr agent focus で自動ジャンプ
+  ジャンプ : Mac のペインが blocked / done になったら herdr agent focus で自動ジャンプ
              （手を離して HANDS_OFF 秒以上、who に SSH ログインが無いとき）。
+             呼び戻しだけではターミナルが前に出るところまでで、どのペインが呼んだかは
+             自分で探すことになるため（ユーザー判断 2026-09-29）。他マシンのペインへは移れない
+             （Mac のローカル herdr がそのペインを持っていない）。
 
 権限
   スペースを押すのは ~/Applications/Recess.app（中身は key code 49 の1行）だけ。
@@ -492,7 +495,7 @@ class Watcher:
             video_pause_and_return(why)
             self.last_return_at = time.monotonic()
             for k in new_attention:
-                if k.startswith("local/") and now[k] == "done":
+                if k.startswith("local/") and now[k] in ("done", "blocked"):
                     if ssh_login_present():
                         log("no jump: ssh login present")
                     elif hid_idle() >= HANDS_OFF:

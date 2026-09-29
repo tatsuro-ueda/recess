@@ -36,7 +36,8 @@ stateDiagram-v2
         Wake the screen.
         If a browser is frontmost: one space key, 0.3 s, then bring the terminal to front.
         If the terminal is already frontmost: no key is sent.
-        A done pane on this Mac: focus it after 3 s hands-off (not when an SSH login is present).
+        A blocked or done pane on this Mac: focus it after 3 s hands-off (not when an SSH login is present).
+        Panes on other machines are never focused (the local herdr does not hold them).
         Any one of blocked / done / reading keeps you in foreground.
         blocked and done are checked on every machine; reading only in the tab you are looking at.
         A reading pane shows `You are reading...` in place of its idle label, because herdr
@@ -178,7 +179,8 @@ stateDiagram-v2
         画面を点ける。
         ブラウザが最前面ならスペース1回、0.3秒後にターミナルを前へ。
         ターミナルが最前面ならスペースは送らない。
-        この Mac の done ペインは、手を離して3秒以上でそのペインへ移る（SSH ログイン中は移らない）。
+        この Mac の blocked / done ペインは、手を離して3秒以上でそのペインへ移る（SSH ログイン中は移らない）。
+        他マシンのペインへは移らない（ローカルの herdr がそのペインを持っていない）。
         blocked・done・reading のどれか1つでも残っていれば foreground。
         blocked と done は全マシン、reading は見ているタブだけを見る。
         reading のペインは状態表示が `You are reading...` に変わる。herdr から見ると
