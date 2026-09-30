@@ -401,6 +401,14 @@ class Watcher:
         # reading 集合そのものは複数持つ（同じタブの相方や他マシンぶんも判定に使う）が、
         # 画面に3つ同時に出ると、どれを読んでいるのか分からなくなる（ユーザー報告 2026-09-29）。
         wanted = {focused_key} if focused_key in self.reading else set()
+        # 消すほうを先にやる。付けてから消すと、その1秒だけ2つ出る（2026-09-30 にログで9回確認）
+        for key in [k for k in self.labeled if k not in wanted]:
+            self.labeled.pop(key, None)
+            if DRY_RUN:
+                continue
+            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-display-agent"])
+            # 消せなくても TTL で消えるので、記録だけ残して先へ進む
+            log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
         at = time.monotonic()
         for key in sorted(wanted):
             if at - self.labeled.get(key, -1e9) < READING_TTL / 3:
@@ -417,13 +425,6 @@ class Watcher:
                 self.labeled[key] = at
             else:
                 log(f"LABEL {key} failed: {err.strip()[:120]}")
-        for key in [k for k in self.labeled if k not in wanted]:
-            self.labeled.pop(key, None)
-            if DRY_RUN:
-                continue
-            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-display-agent"])
-            # 消せなくても TTL で消えるので、記録だけ残して先へ進む
-            log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
 
     def tick(self):
         enabled = not os.path.exists(OFF_FILE)
