@@ -16,7 +16,7 @@ stateDiagram-v2
         state "Terminal" as term
         state "Video (browser)" as nf
         [*] --> term
-        term --> nf : armed by an fg→bg transition + some agent is working + hands off 3 s + terminal frontmost (one space key)
+        term --> nf : an fg→bg transition while you are at the terminal + some agent is working + hands off 3 s + terminal frontmost (one space key)
         nf --> term : you come back on your own (Recess does nothing)
     }
 
@@ -47,7 +47,9 @@ stateDiagram-v2
 
     note right of bg
         After leaving (going back to video)
-        The trip is armed only by the fg→bg transition. Changes inside background never arm it.
+        The trip is set up only by the fg→bg transition, and only if the terminal was frontmost at that moment.
+        Changes inside background never set it up. If you were in another window, the trip is skipped, not remembered,
+        so coming back to the terminal does not send you to the video.
         No trip when every pane is idle (nobody to wait for).
         If another machine stops answering, its last state is kept for 30 s, then ignored.
     end note
@@ -162,7 +164,7 @@ stateDiagram-v2
         state "ターミナル" as term
         state "動画（ブラウザ）" as nf
         [*] --> term
-        term --> nf : fg→bg の遷移で印が立っている ＋ どこかに working ＋ 手を離して3秒 ＋ 最前面がターミナル（スペース1回）
+        term --> nf : ターミナルを見ているあいだに fg→bg へ移った ＋ どこかに working ＋ 手を離して3秒 ＋ 最前面がターミナル（スペース1回）
         nf --> term : 自分でターミナルへ戻る（Recess は何もしない）
     }
 
@@ -194,6 +196,8 @@ stateDiagram-v2
     note right of bg
         出たあと（動画へ戻る）
         印が立つのは fg→bg の遷移だけ。background の中の変化では立たない。
+        さらに、その瞬間に最前面がターミナルだったときだけ立つ。他のウィンドウで作業していたら
+        印を立てずに見送る（覚えておいて、ターミナルへ戻った瞬間に連れ出すことはしない）。
         全部 idle なら行かない（待つ相手がいない）。
         他マシンが応答しなければ30秒は前回の状態、以後はそのマシンを無いものとする。
     end note

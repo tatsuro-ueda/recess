@@ -549,6 +549,12 @@ class Watcher:
         view = in_view(self.active)
         view_working = [k for k in view if now.get(k) == "working"]
         view_reading = [k for k in view if k in self.reading]
+        app = front_app()
+        if app in TERMINAL_APPS:
+            LAST_TERMINAL["name"] = TERMINAL_OPEN_NAMES.get(app, app)
+        elif app in BROWSER_APPS:            # ブラウザだけ覚える（システム設定などを戻り先にしない）
+            LAST_OTHER_APP["name"] = app
+
         # foreground = 人の手が要る（blocked / done がどこかにある、または見ているタブに reading がある）
         # background = idle と working だけ。ブラウザへ行くのは foreground → background へ移った瞬間だけ
         # （2026-09-26 変更。background の中で状態が変わっても、それだけでは行かない）
@@ -556,21 +562,21 @@ class Watcher:
         if self.fg_prev is None:
             self.fg_prev = fg_now            # 起動直後は遷移とみなさない
         if self.fg_prev and not fg_now:
-            self.pending_off = True
-            log(f"FG->BG: attention gone, reading gone -> browser armed (working anywhere: {any(v == 'working' for v in now.values())})")
+            # 用事が終わった瞬間にターミナルを見ていた人だけ、動画へ行く。他のウィンドウで
+            # 作業している人は休憩中ではないので、その回は見送る。印を残すと、ターミナルへ
+            # 戻った瞬間に連れ出されてしまう（ユーザー判断 2026-10-03）。
+            if app in TERMINAL_APPS:
+                self.pending_off = True
+                log(f"FG->BG: attention gone, reading gone -> browser next (working anywhere: {any(v == 'working' for v in now.values())})")
+            else:
+                log(f"FG->BG: skipped: you are in {app}, not at the terminal")
         elif fg_now:
             self.pending_off = False
         self.fg_prev = fg_now
         # 実際に行けるのは、どこかに working があるときだけ（見ているタブに限らない。ユーザー判断 2026-09-26）。
-        # 全部 idle なら待つ相手がいないので行かない。無ければ armed のまま待つ
+        # 全部 idle なら待つ相手がいないので行かない。無ければ印を残したまま待つ
         any_working = any(v == "working" for v in now.values())
         want_off = (not attention) and afp is not None and any_working and not view_reading
-
-        app = front_app()
-        if app in TERMINAL_APPS:
-            LAST_TERMINAL["name"] = TERMINAL_OPEN_NAMES.get(app, app)
-        elif app in BROWSER_APPS:            # ブラウザだけ覚える（システム設定などを戻り先にしない）
-            LAST_OTHER_APP["name"] = app
 
         if self.pending_off and want_off and self.enabled:
             idle = hid_idle()
