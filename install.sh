@@ -36,7 +36,7 @@ UID_NUM="$(id -u)"
 # root で走ると $HOME 配下が root 所有になり、launchd の gui/0 も無いので必ず失敗する。あとで自分では消せなくなる
 [ "$UID_NUM" -ne 0 ] || die "sudo なしで実行してください（root では入れられません）"
 
-RECESS_VERSION="0.1.0"
+RECESS_VERSION="0.2.0"
 APP_BUILD="1"                          # Recess.app の中身（AppleScript・Info.plist）を変えたら上げる。版が違えば作り直す
 LABEL="jp.feel-physics.recess"          # launchd のラベル（plist のファイル名にもなる）
 BUNDLE_ID="jp.feel-physics.Recess"      # Recess.app の識別子（アクセシビリティ許可はこれに紐づく）
