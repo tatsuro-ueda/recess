@@ -84,6 +84,8 @@ Log: `~/.local/state/recess/watch.log`. Most lines start with `state:` (a status
 
 Each `TOGGLE` line names the app the space key was sent to (`target=Comet (front=iTerm2)`). Before it moves, a notification says `Moving to Comet in 5s` and it waits that long, so you can read where it is about to go — a notification shown after the switch arrives too late to read. If you touch the keyboard while it waits, it does not go (`cancelled: hands back on` in the log) and announces again once your hands rest. That is how you catch a space key landing on the wrong window. To silence the notification (and the wait): `touch ~/.local/state/recess/announce-off`.
 
+To make Recess ignore a pane entirely (for example an agent that runs on a timer and would otherwise call you back every round), write part of its pane title on a line of `~/.local/state/recess/ignore`. A matching pane is treated as if it did not exist: it never calls you back, never counts as working, and never gets the reading label. The file is read every poll, so no restart is needed. Lines starting with `#` are comments.
+
 ```sh
 tail -f ~/.local/state/recess/watch.log          # watch it decide
 launchctl print gui/$(id -u)/jp.feel-physics.recess | grep state   # is it running?
@@ -227,6 +229,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 ログ：`~/.local/state/recess/watch.log`。行頭はおもに `state:`（状態の要約。変わったときだけ書く）、`PLAY`、`RETURN`、`TOGGLE`、`JUMP`、`WAKE`、`remote <名前>: unreachable` / `back` のどれかです。launchd 自身の出力は同じフォルダの `watch.stdout.log` と `watch.stderr.log` に出ます。起動しないときは `watch.stderr.log` を見てください。
 
 `TOGGLE` の行には、スペースを送った相手のアプリ名が残ります（`target=Comet (front=iTerm2)`）。移る**前**に「`Moving to Comet in 5s`」と通知を出し、その秒数だけ待ってから移ります（移ったあとに出しても、画面が変わっているので読めません）。待っている間に手を動かしたら移りません（ログは `cancelled: hands back on`）。次に手が止まれば、また知らせてから移ります。スペースが別のウィンドウへ飛んでいるときは、これで気づけます。通知と待ち時間がうるさいときは `touch ~/.local/state/recess/announce-off` で止まります。
+
+特定のペインを丸ごと無視させたいとき（定期実行のループのように、毎回終わるたびに呼び戻されては困るペイン）は、`~/.local/state/recess/ignore` にそのペイン名の一部を1行ずつ書きます。合ったペインは無いものとして扱い、呼び戻しにも、働いている判定にも、読み中の印にも使いません。ファイルは毎回読み直すので再起動は要りません。`#` で始まる行はコメントです。
 
 ```sh
 tail -f ~/.local/state/recess/watch.log          # 判断を眺める

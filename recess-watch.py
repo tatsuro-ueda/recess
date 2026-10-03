@@ -243,6 +243,23 @@ LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   #
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 
+IGNORE_FILE = os.path.join(STATE_DIR, "ignore")   # 1行に1つ、ペイン名の一部を書く。合うペインは無いものとして扱う（定期実行のループなど）
+
+
+def ignored_titles():
+    """IGNORE_FILE の各行（空行と # で始まる行を除く）。毎回読み直すので、書き換えれば再起動なしで効く。"""
+    try:
+        with open(IGNORE_FILE) as f:
+            return [s.strip() for s in f if s.strip() and not s.strip().startswith("#")]
+    except OSError:
+        return []
+
+
+def is_ignored(agent, patterns):
+    title = agent.get("terminal_title_stripped") or agent.get("terminal_title") or ""
+    return any(p in title for p in patterns)
+
+
 ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「Moving to ◯◯」の通知を止める
 ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
 
@@ -433,6 +450,7 @@ class Watcher:
             self._enabled_logged = enabled
         self.enabled = enabled
         eps = self.collect()
+        ignore = ignored_titles()
         now, focus, fstat = {}, {}, {}
         for ep, agents in eps.items():
             if agents is None:
@@ -445,6 +463,8 @@ class Watcher:
                 continue
             focus[ep] = None
             for a in agents:
+                if is_ignored(a, ignore):
+                    continue
                 key = f"{ep}/{a['pane_id']}"
                 now[key] = a.get("agent_status", "?")
                 self.tab_of[key] = f"{ep}/{(a.get('tab_id') or a['pane_id'])}"
