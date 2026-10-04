@@ -6,7 +6,7 @@ dateModified: 2026-10-04
 
 # 開発チェックリスト（Recess）
 
-`docs/` の4文書から生成した派生物。正本は docs 側。docs を直したら `make-development-checklist` を呼び直す。
+`docs/` の3文書（`.tasknote-paths.yml` で framework_rule を外した）から生成した派生物。正本は docs 側。docs を直したら `make-development-checklist` を呼び直す。
 
 **使い方**：章ごとに1回だけ「この章は対象か」を判断する。項目ごとに対象かどうかを考えない。
 例：画面を動かす数値にも通知にもログにも触らない変更なら、0章とD章は「章ごと対象外（理由）」で通してよい。
@@ -31,7 +31,7 @@ dateModified: 2026-10-04
 - [ ] 階層の差が1軸だけで示されている（根拠：docs/ux-policy.md 記録の作法4）
 - [ ] **実測**：`watch.log` の行頭を集計し、タグが一覧どおりで、画面が動いた記録が背景に埋もれていないことを目で確認した（根拠：docs/ux-policy.md 記録の作法3・docs/functional-design.md 記録）
 
-## A章: 設計判断（8件）
+## A章: 設計判断（17件）
 
 - [ ] キーを送るのは `Recess.app` だけで、python3 に許可を出していない（根拠：docs/architecture.md 権限をアプリ1つに閉じ込める）
 - [ ] 常駐が使う Mac 側の道具は権限不要のものだけ（`open` `lsappinfo` `caffeinate` `ioreg` `who`）（根拠：docs/architecture.md 権限をアプリ1つに閉じ込める）
@@ -41,6 +41,15 @@ dateModified: 2026-10-04
 - [ ] 判定の本体が状態源の種類を知らない（根拠：docs/architecture.md 状態源は足せる形にする）
 - [ ] 区画を持たない状態源へ移動を指示していない（根拠：docs/architecture.md 状態源は足せる形にする）
 - [ ] ある源が黙っても、他の源の判断が続く（根拠：docs/architecture.md 状態源は足せる形にする）
+- [ ] 常駐が python3 標準ライブラリだけで動く（パッケージを追加していない）（根拠：docs/architecture.md 使う道具の制約）
+- [ ] CLI と導入が sh で、bash 専用の書き方をしていない（根拠：docs/architecture.md 使う道具の制約）
+- [ ] hook は失敗しても正常終了する（根拠：docs/architecture.md 他人のプロセスを止めない）
+- [ ] 常駐は1周で例外が出ても落ちず、記録を残して次の周へ進む（根拠：docs/architecture.md 他人のプロセスを止めない）
+- [ ] 秘密をファイルに持っていない（根拠：docs/architecture.md 外へ出さないもの）
+- [ ] 記録にプロンプトの中身を書いていない（根拠：docs/architecture.md 外へ出さないもの）
+- [ ] 画面を動かす判定を、実コードを読み込んで最前面アプリだけ差し替えるハーネスで確かめた（根拠：docs/architecture.md 確かめ方）
+- [ ] `python3 -m py_compile` が通る（根拠：docs/architecture.md 確かめ方）
+- [ ] 画面が動くふるまいは、机の上で1日動かしてから「できた」と言う（根拠：docs/architecture.md 確かめ方）
 
 ## B章: 責務分担（6件）
 
@@ -51,17 +60,6 @@ dateModified: 2026-10-04
 - [ ] 同じ判定が2か所に現れていない（関数へ出して1か所から呼んでいる）（根拠：docs/repository-structure.md 決めごと）
 - [ ] 各ファイルが責務分担表の「持たないもの」を持っていない（根拠：docs/repository-structure.md 責務分担）
 
-## C章: 枠組みの決めごと（9件）
-
-- [ ] 常駐が python3 標準ライブラリだけで動く（パッケージを追加していない）（根拠：docs/framework-rule.md 言語と依存）
-- [ ] CLI と導入が sh で、bash 専用の書き方をしていない（根拠：docs/framework-rule.md 言語と依存）
-- [ ] hook は失敗しても正常終了する（根拠：docs/framework-rule.md 他人のプロセスを止めない）
-- [ ] 常駐は1周で例外が出ても落ちず、記録を残して次の周へ進む（根拠：docs/framework-rule.md 他人のプロセスを止めない）
-- [ ] 秘密をファイルに持っていない（根拠：docs/framework-rule.md 外へ出すもの）
-- [ ] 記録にプロンプトの中身を書いていない（根拠：docs/framework-rule.md 外へ出すもの）
-- [ ] 画面を動かす判定を、実コードを読み込んで最前面アプリだけ差し替えるハーネスで確かめた（根拠：docs/framework-rule.md 確かめ方）
-- [ ] `python3 -m py_compile` が通る（根拠：docs/framework-rule.md 確かめ方）
-- [ ] 画面が動くふるまいは、机の上で1日動かしてから「できた」と言う（根拠：docs/framework-rule.md 確かめ方）
 
 ## D章: 画面を動かす作法（11件）
 

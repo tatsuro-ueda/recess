@@ -1,0 +1,19 @@
+# make-development-checklist が読む設定（章と根拠docsの割り当て）。
+#
+# 2026-10-04: framework_rule を既定から外した。science-planner 系と同じ扱い。
+# 枠組みの決めごと（依存・他人のプロセスを止めない・確かめ方）は architecture.md が持つ。
+# もともと framework-rule.md は code-quest-pyxel のときに作ったもので、
+# その後の repo では切るか architecture へ吸収する運用になっている。
+docs_root: docs
+llm_wiki_update_docs:
+  default_targets:
+    - architecture
+    - repository_structure
+    - ux_policy
+  target_docs:
+    architecture: architecture.md
+    repository_structure: repository-structure.md
+    ux_policy: ux-policy.md
+  disabled_defaults:
+    - framework_rule
+  absorbed_defaults:
