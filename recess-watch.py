@@ -243,6 +243,8 @@ LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   #
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
 
 
+STATUS_FILE = os.path.join(STATE_DIR, "status.json")   # recess status が読む現在地。判定はここでは行わず、tick が決めた値をそのまま並べる
+
 IGNORE_FILE = os.path.join(STATE_DIR, "ignore")   # 1行に1つ、ペイン名の一部を書く。合うペインは無いものとして扱う（定期実行のループなど）
 
 
@@ -364,6 +366,7 @@ class Watcher:
         self.active = "local"   # 最後にフォーカスが動いた端末
         self.pending_off = False
         self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
+        self.titles = {}        # key -> ペイン名。取れなかった端末のぶんは前回の名前を残す
         self.tab_of = {}             # key -> "endpoint/tab_id"（同じタブの2ペインは一体で判断する）
         self.fg_prev = None          # 前回 foreground だったか（None は起動直後）
         self.labeled = {}       # key -> 最後に state_label を貼った時刻（monotonic）
@@ -443,6 +446,62 @@ class Watcher:
             else:
                 log(f"LABEL {key} failed: {err.strip()[:120]}")
 
+    def write_status(self, now, attention, view, afp, app, ignored_panes):
+        """recess status が読む現在地を書く。ここでは判定しない。
+
+        tick が決めた値をそのまま並べる。status 側に判定を書くと、常駐の本当の判断と
+        ずれて嘘をつくため（ユーザー判断 2026-10-06）。
+        ペイン単位で連れ出しを妨げるのは blocked/done と「見ているタブの読み中」の2つだけ。
+        """
+        view_set = set(view)
+        panes = []
+        for key in sorted(now):
+            status = now[key]
+            reading = key in self.reading
+            if status in ("blocked", "done"):
+                blocking = "呼び出しが残っている"
+            elif reading and key in view_set:
+                blocking = "見ているタブで読み中"
+            else:
+                blocking = None            # working は待つ相手として必要。idle も妨げない
+            panes.append({"key": key, "title": self.titles.get(key, ""), "status": status,
+                          "reading": reading, "in_view": key in view_set,
+                          "ignored": False, "blocking": blocking})
+        for p in ignored_panes:
+            panes.append({"key": p["key"], "title": p["title"], "status": p["status"],
+                          "reading": False, "in_view": False, "ignored": True, "blocking": None})
+
+        idle = hid_idle()
+        cooldown_left = max(RETURN_COOLDOWN - (time.monotonic() - self.last_return_at), 0)
+        any_working = any(v == "working" for v in now.values())
+        blocking = [p["key"] for p in panes if p["blocking"]]
+        snapshot = {
+            "written_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "mode": "ON" if self.enabled else "OFF",
+            "front_app": app,
+            "front_is_terminal": app in TERMINAL_APPS,
+            "hands_off_seconds": idle,
+            "hands_off_needed": HANDS_OFF,
+            "any_working": any_working,
+            "focused_pane": afp,
+            "pending_off": bool(self.pending_off),
+            "return_cooldown_left": round(cooldown_left, 1),
+            "video_app": video_app(),
+            "blocking": blocking,
+            "panes": panes,
+        }
+        snapshot["can_play"] = bool(
+            self.enabled and snapshot["pending_off"] and not attention and afp is not None
+            and any_working and not blocking and cooldown_left <= 0
+            and idle >= HANDS_OFF and snapshot["front_is_terminal"])
+        tmp = STATUS_FILE + ".tmp"
+        try:
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(snapshot, f, ensure_ascii=False)
+            os.replace(tmp, STATUS_FILE)
+        except OSError as e:
+            log(f"status: 書けませんでした: {e!r}")
+
     def tick(self):
         enabled = not os.path.exists(OFF_FILE)
         if enabled != getattr(self, "_enabled_logged", None):
@@ -452,6 +511,7 @@ class Watcher:
         eps = self.collect()
         ignore = ignored_titles()
         now, focus, fstat = {}, {}, {}
+        ignored_panes = []      # 無視リストに合ったペイン。now には入れないが status には出す
         for ep, agents in eps.items():
             if agents is None:
                 # 取れなかった端末は前回の値を引き継ぐ（消えたと誤解しない）
@@ -463,9 +523,13 @@ class Watcher:
                 continue
             focus[ep] = None
             for a in agents:
-                if is_ignored(a, ignore):
-                    continue
                 key = f"{ep}/{a['pane_id']}"
+                title = a.get("terminal_title_stripped") or a.get("terminal_title") or ""
+                if is_ignored(a, ignore):
+                    ignored_panes.append({"key": key, "title": title,
+                                          "status": a.get("agent_status", "?")})
+                    continue
+                self.titles[key] = title
                 now[key] = a.get("agent_status", "?")
                 self.tab_of[key] = f"{ep}/{(a.get('tab_id') or a['pane_id'])}"
                 if a.get("focused"):
@@ -592,6 +656,7 @@ class Watcher:
                         log(f"front app is {app} -> keep waiting")
                         self._front_logged = app
 
+        self.write_status(now, attention, view, afp, app, ignored_panes)
         self.prev, self.prev_focus = now, focus
 
 

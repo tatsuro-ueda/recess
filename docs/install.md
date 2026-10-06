@@ -75,7 +75,7 @@ Why not python3: Accessibility lets a process send any key to any app. The resid
 Recess keeps watching, but you decide when it may move you:
 
 ```sh
-recess status    # ON or OFF
+recess status    # ON or OFF, plus every pane and what is holding a trip back
 recess off       # watch only. No browser trips, no call-backs
 recess on        # back to normal
 recess toggle
@@ -175,7 +175,7 @@ sleep 5; open -g -W ~/Applications/Recess.app
 常駐は動いたまま、連れ出しと呼び戻しだけを止められます。
 
 ```sh
-recess status    # ON か OFF か
+recess status    # ON / OFF と、ペイン一覧・いま連れ出しを妨げているもの
 recess off       # 見張るだけ。ブラウザへ行かず、呼び戻しもしない
 recess on        # 元に戻す
 recess toggle
