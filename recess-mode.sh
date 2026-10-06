@@ -20,7 +20,7 @@ detail() {
   [ -n "$py" ] || return 0
   [ -f "$STATUS_JSON" ] || return 0
   "$py" - "$STATUS_JSON" "$STATUS_MAX_AGE" <<'RENDER'
-import datetime, json, sys, unicodedata
+import datetime, json, shutil, subprocess, sys, unicodedata
 
 def width(s):
     return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in s)
@@ -77,9 +77,44 @@ print(f"  最前面 {d['front_app']}{' ✓' if d['front_is_terminal'] else ' ✗
       f" / 連れ出し先 {d['video_app']}")
 print()
 
-order = {"blocked": 0, "done": 0}
-for p in sorted(d["panes"], key=lambda p: (p["blocking"] is None, p["ignored"], p["key"])):
+def tab_labels(endpoints):
+    """herdr のタブ名（サイドバーに出ている名前）を endpoint ごとに引く。
+
+    ターミナルのタイトルではなく、人が実際に見ている名前で並べるため
+    （ユーザー報告 2026-10-06「OAuth callback テストより 🔴デイスタ の方がわかりやすい」）。
+    名前は見せ方の話で判定ではないので、ここで取ってよい。判定は常駐だけが持つ。
+    """
+    herdr = shutil.which("herdr")
+    labels = {}
+    if not herdr:
+        return labels
+    for ep in sorted(endpoints):
+        cmd = [herdr, "tab", "list"] if ep == "local" else [herdr, "--machine", ep, "tab", "list"]
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+            if r.returncode != 0:
+                continue
+            for t in json.loads(r.stdout)["result"]["tabs"]:
+                labels[f"{ep}/{t['tab_id']}"] = (t.get("label") or "").strip()
+        except Exception:
+            pass                      # 取れなければターミナルのタイトルへ落ちる
+    return labels
+
+panes = sorted(d["panes"], key=lambda p: (p["blocking"] is None, p["ignored"], p["key"]))
+labels = tab_labels({p["key"].split("/", 1)[0] for p in panes})
+
+def shown(p):
+    return labels.get(p.get("tab") or "", "") or p.get("title") or p["key"].split("/", 1)[1]
+
+same = {}
+for p in panes:
+    same[shown(p)] = same.get(shown(p), 0) + 1   # 1タブに2ペインあると名前がぶつかる
+
+for p in panes:
     machine, pane = p["key"].split("/", 1)
+    name = shown(p)
+    if same[name] > 1:
+        name = f"{name} [{pane}]"
     if p["ignored"]:
         verdict = "ok（無視リスト）"
     elif p["blocking"]:
@@ -90,7 +125,7 @@ for p in sorted(d["panes"], key=lambda p: (p["blocking"] is None, p["ignored"], 
         verdict = "ok（読み中。見ているタブの外）"
     else:
         verdict = "ok"
-    print(f"  {pad(clip(machine, 14), 14)} {pad(clip(p['title'] or pane, 32), 32)} "
+    print(f"  {pad(clip(machine, 14), 14)} {pad(clip(name, 24), 24)} "
           f"{pad(p['status'], 8)} {verdict}")
 RENDER
 }

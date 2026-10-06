@@ -465,11 +465,12 @@ class Watcher:
             else:
                 blocking = None            # working は待つ相手として必要。idle も妨げない
             panes.append({"key": key, "title": self.titles.get(key, ""), "status": status,
-                          "reading": reading, "in_view": key in view_set,
-                          "ignored": False, "blocking": blocking})
+                          "tab": self.tab_of.get(key), "reading": reading,
+                          "in_view": key in view_set, "ignored": False, "blocking": blocking})
         for p in ignored_panes:
             panes.append({"key": p["key"], "title": p["title"], "status": p["status"],
-                          "reading": False, "in_view": False, "ignored": True, "blocking": None})
+                          "tab": p.get("tab"), "reading": False, "in_view": False,
+                          "ignored": True, "blocking": None})
 
         idle = hid_idle()
         cooldown_left = max(RETURN_COOLDOWN - (time.monotonic() - self.last_return_at), 0)
@@ -527,6 +528,7 @@ class Watcher:
                 title = a.get("terminal_title_stripped") or a.get("terminal_title") or ""
                 if is_ignored(a, ignore):
                     ignored_panes.append({"key": key, "title": title,
+                                          "tab": f"{ep}/{a.get('tab_id') or a['pane_id']}",
                                           "status": a.get("agent_status", "?")})
                     continue
                 self.titles[key] = title
