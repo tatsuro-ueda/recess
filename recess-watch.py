@@ -20,10 +20,13 @@
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
              見ている端末で別のペインへ移ったら終わる。
              画面に印を出すのは、そのうち「いま開いているペイン」1つだけ（読む人は1人）。
-             読み中のあいだは、サイドバーのエージェント名（claude など）を「You are reading...」
-             に差し替える（herdr pane report-metadata の display-only な display_agent。TTL 付き
-             なので常駐が落ちたら自然に消える）。idle と reading は herdr から見ると同じ idle で、
-             画面では見分けられないため（ユーザー報告 2026-09-28）。
+             読み中のあいだは、サイドバーに「to be read」と出す（herdr pane report-metadata の
+             display-only なカスタムトークン `$recess`。TTL 付きなので常駐が落ちたら自然に消える）。
+             idle と reading は herdr から見ると同じ idle で、画面では見分けられないため
+             （ユーザー報告 2026-09-28）。
+             **サイドバーの行に `$recess` を置かないと何も出ない。** 設定例は docs/install.md。
+             エージェント名（display_agent）を上書きしないのは、`agent` トークンを色で塗ると
+             claude / codex まで塗られてしまい、印だけ赤くできないため（ユーザー判断 2026-10-10）。
              状態の文字（state_label）を使わないのは、サイドバーの行に state_text を入れていないと
              どこにも出ないため（2026-09-29 実測。既定の行構成も state_icon だけ）。
   ジャンプ : Mac のペインが blocked / done になったら herdr agent focus で自動ジャンプ
@@ -75,7 +78,8 @@
                                 （既定 "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge"）
   RECESS_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
   RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
-  RECESS_READING_LABEL           読み中のペインに出す文言（既定 "You are reading..."。空にすると出さない）
+  RECESS_READING_LABEL           読み中のペインに出す文言（既定 "to be read"。空にすると出さない）
+  RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess" → 行には $recess と書く）
   RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
 
 状態は毎回の差分（前回→今回）で見る。
@@ -265,7 +269,8 @@ def is_ignored(agent, patterns):
 ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「Moving to ◯◯」の通知を止める
 ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
 
-READING_LABEL = os.environ.get("RECESS_READING_LABEL", "You are reading...")   # 読み中の状態表示。空で出さない
+READING_LABEL = os.environ.get("RECESS_READING_LABEL", "to be read")   # 読み中の印。空で出さない
+READING_TOKEN = os.environ.get("RECESS_READING_TOKEN", "recess")       # サイドバーの行に $<この名前> で置く
 READING_TTL = max(POLL * 6, 15.0)   # 秒。貼り直しの間隔より長くし、常駐が落ちたら TTL 切れで消える
 
 
@@ -411,10 +416,12 @@ class Watcher:
         return ssh_herdr(target, " ".join(["herdr"] + [shlex.quote(a) for a in argv]))
 
     def sync_reading_labels(self, focused_key):
-        """読み中のペインだけ、サイドバーのエージェント名を読み中の文言へ差し替える。
+        """読み中のペインだけ、サイドバーにカスタムトークンで印を出す。
         idle と reading は herdr から見ると同じなので、ここだけが画面上の見分け方になる。
-        状態表示（state_label）ではなくエージェント名（display_agent）を使うのは、
-        サイドバーの行構成に state_text が無いと状態の文字がどこにも出ないため（2026-09-29 実測）。"""
+        state_label ではないのは、行構成に state_text が無いと出ないため（2026-09-29 実測）。
+        display_agent でもないのは、それが `agent` トークンの値を上書きする仕組みで、
+        色を付けると claude / codex まで同じ色になるため。カスタムトークンなら
+        その1語だけ色を変えられる（ユーザー判断 2026-10-10「赤字にして」）。"""
         if not READING_LABEL:
             return
         # 読んでいる人は1人しかいない。印を出すのは「見ている端末で、いま開いているペイン」だけ。
@@ -426,7 +433,7 @@ class Watcher:
             self.labeled.pop(key, None)
             if DRY_RUN:
                 continue
-            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-display-agent"])
+            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-token", READING_TOKEN])
             # 消せなくても TTL で消えるので、記録だけ残して先へ進む
             log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
         at = time.monotonic()
@@ -437,7 +444,7 @@ class Watcher:
                 self.labeled[key] = at
                 continue
             rc, _, err = self.report_metadata(key, [
-                "--source", "recess", "--display-agent", READING_LABEL,
+                "--source", "recess", "--token", f"{READING_TOKEN}={READING_LABEL}",
                 "--ttl-ms", str(int(READING_TTL * 1000))])
             if rc == 0:
                 if key not in self.labeled:

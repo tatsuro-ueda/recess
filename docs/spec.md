@@ -40,8 +40,9 @@ stateDiagram-v2
         Panes on other machines are never focused (the local herdr does not hold them).
         Any one of blocked / done / reading keeps you in foreground.
         blocked and done are checked on every machine; reading only in the tab you are looking at.
-        The reading pane you are looking at shows `You are reading...` in place of its agent name,
+        The reading pane you are looking at shows `to be read` next to its agent name,
         because herdr reports reading as plain idle and nothing on screen tells the two apart.
+        It is a custom pane token, so your sidebar needs `$recess` in a row (see install.md).
         Only one pane ever carries it: the focused pane on the machine you are at. There is one of you.
     end note
 
@@ -75,7 +76,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_VIDEO_APP` | (empty) | Force one browser, e.g. `Safari`. Empty = the browser you last used, Safari until then. |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Recess has seen you on a terminal. |
 | `RECESS_ANNOUNCE_SECONDS` | `5` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
-| `RECESS_READING_LABEL` | `You are reading...` | What a reading pane shows in place of its agent name in the sidebar. Empty = leave the name alone. |
+| `RECESS_READING_LABEL` | `to be read` | What a reading pane shows in the sidebar. Empty = show nothing. |
+| `RECESS_READING_TOKEN` | `recess` | The custom pane token that carries it. Put `$<name>` in a sidebar row to see it. |
 | `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing, switch nothing and change no label. |
 
 A good first day: `RECESS_DRY_RUN=1`, read the log, then turn it on.
@@ -131,7 +133,7 @@ herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/
 
 ## Known weaknesses
 
-- The reading label needs `herdr pane report-metadata` (herdr 0.9.1) and a sidebar that shows the `agent` row (the default does). A `--state-label` was tried first and stayed invisible: the default sidebar rows carry `state_icon`, not `state_text`.
+- The reading mark needs `herdr pane report-metadata` (herdr 0.9.1) **and `$recess` in one of your sidebar rows**; the default rows do not have it, so out of the box nothing shows. Two earlier tries were dropped: `--state-label` stayed invisible (the default rows carry `state_icon`, not `state_text`), and `--display-agent` worked but overwrites the `agent` token, so colouring the mark would also colour every agent name.
 - Space is a toggle. Pause or play by hand and the next press goes the wrong way. Recess never reads playback state; keep the video paused while you are at the terminal.
 - Tried with Safari and Netflix only. Other sites or players may not bind space to play/pause, or may not have the video focused.
 - "Browser is frontmost" does not mean "right tab, video focused". If a text field or another tab has focus, space goes there.
@@ -190,8 +192,9 @@ stateDiagram-v2
         他マシンのペインへは移らない（ローカルの herdr がそのペインを持っていない）。
         blocked・done・reading のどれか1つでも残っていれば foreground。
         blocked と done は全マシン、reading は見ているタブだけを見る。
-        いま見ている reading のペインは、サイドバーのエージェント名が `You are reading...` に変わる。
+        いま見ている reading のペインは、サイドバーのエージェント名の隣に `to be read` が出る。
         herdr から見ると reading は idle そのもので、画面では見分けられないため。
+        カスタムトークンなので、サイドバーの行に `$recess` を置く必要がある（install.md 参照）。
         印が付くのは常に1つだけ（見ている端末の、開いているペイン）。読む人は1人しかいない。
     end note
 
@@ -225,7 +228,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_VIDEO_APP` | （空） | ブラウザを決め打ちする（例 `Safari`）。空なら最後に使ったブラウザ、それまでは Safari。 |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
 | `RECESS_ANNOUNCE_SECONDS` | `5` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
-| `RECESS_READING_LABEL` | `You are reading...` | 読み中のペインが、サイドバーのエージェント名の代わりに出す文言。空にすると差し替えない。 |
+| `RECESS_READING_LABEL` | `to be read` | 読み中のペインがサイドバーに出す文言。空にすると出さない。 |
+| `RECESS_READING_TOKEN` | `recess` | その文言を入れるカスタムトークン名。サイドバーの行に `$<名前>` を置くと見える。 |
 | `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず、何も切り替えず、表示も差し替えない。 |
 
 最初の1日は `RECESS_DRY_RUN=1` でログだけ読み、それから本番にするのがおすすめです。
@@ -281,7 +285,7 @@ herdr はエージェントが終わったときと質問したときに音を�
 
 ## 分かっている弱点
 
-- 読み中の表示は `herdr pane report-metadata`（herdr 0.9.1）と、サイドバーに `agent` の行があることに頼っている（既定はある）。最初に試した `--state-label` は画面に出なかった。既定の行構成が `state_icon` だけで `state_text` を持たないため。
+- 読み中の印は `herdr pane report-metadata`（herdr 0.9.1）と、**サイドバーの行に `$recess` を置くこと**に頼っている。既定の行構成には無いので、入れただけでは何も出ない。先に試して捨てた案は2つ。`--state-label` は画面に出なかった（既定の行が `state_icon` だけで `state_text` を持たない）。`--display-agent` は出たが `agent` トークンの値を上書きする仕組みなので、印を色で塗るとエージェント名まで塗られてしまう。
 - スペースは切り替えです。手で止めたり再生したりすると、次の1回が逆に効きます。Recess は再生状態を読みません。ターミナルにいる間は動画を止めておいてください。
 - 確かめたのは Safari と Netflix だけ。他のサイトやプレーヤーではスペースが再生／停止に割り当てられていなかったり、動画にフォーカスが無かったりします。
 - 「ブラウザが最前面」は「正しいタブで動画にフォーカスがある」と同じではありません。文字入力欄や別のタブにフォーカスがあれば、スペースはそこへ行きます。
