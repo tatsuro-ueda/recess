@@ -45,9 +45,11 @@ Running `install.sh` again without options is safe. It keeps Recess.app, puts `r
 
 Recess starts right away, but it cannot press space until you do the next section.
 
-## Show the reading mark in your sidebar
+## Optional: colour the reading mark
 
-Recess marks the pane you are reading with `to be read`. It writes it as a custom pane token, and herdr only draws tokens you have put in a row — the default rows do not have it, so **out of the box you will not see the mark**. Add `$recess` to the agent row in `~/.config/herdr/config.toml`:
+Recess marks the pane you are reading with `to be read`. Out of the box it shows that in place of the agent name, so you see it without touching any config.
+
+If you want the mark in its own colour, add `$recess` to a sidebar row in `~/.config/herdr/config.toml`. Recess notices the row and switches to writing a custom pane token instead, which can be styled on its own:
 
 ```toml
 [ui.sidebar.agents]
@@ -57,7 +59,7 @@ rows = [
 ]
 ```
 
-Then `herdr server reload-config`. The colour is yours to pick; only this one word takes it, so your agent names stay as they were. (An earlier version overwrote the agent name instead, which meant colouring the mark also coloured every `claude` and `codex`.)
+Then `herdr server reload-config`. Only this one word takes the colour, so your agent names stay as they were — colouring the `agent` token instead would paint every `claude` and `codex`. Take the row out again and Recess falls back to replacing the agent name, so the mark never silently disappears.
 
 ## Give the permissions to Recess.app, and to nothing else
 
@@ -161,7 +163,9 @@ Recess はすぐ動き始めますが、次の節をやるまでスペースは�
 
 ## 読み中の印をサイドバーに出す
 
-Recess は、いま読んでいるペインに `to be read` と出します。これはカスタムトークンとして書くので、herdr は**行に置いたトークンしか描きません**。既定の行構成には入っていないため、**入れただけでは印が見えません**。`~/.config/herdr/config.toml` のエージェント行に `$recess` を足してください。
+Recess は、いま読んでいるペインに `to be read` と出します。**既定ではエージェント名の代わりに出す**ので、設定を触らなくても見えます。
+
+印に色を付けたいときだけ、`~/.config/herdr/config.toml` のサイドバー行に `$recess` を足してください。recess はその行を見つけると、カスタムトークンで書く方式へ切り替えます。トークンは単独で色を変えられます。
 
 ```toml
 [ui.sidebar.agents]
@@ -171,7 +175,7 @@ rows = [
 ]
 ```
 
-そのあと `herdr server reload-config`。色は好きに決めてください。色が付くのはこの1語だけなので、エージェント名はそのままです。（前の版はエージェント名を上書きしていました。その方式だと、印を赤くすると `claude` や `codex` まで赤くなります。）
+そのあと `herdr server reload-config`。色が付くのはこの1語だけなので、エージェント名はそのままです（`agent` トークンを塗ると `claude` や `codex` まで塗られます）。行を外せば、recess はエージェント名を差し替える方式へ戻ります。**印が黙って消えることはありません。**
 
 ## 許可を Recess.app にだけ出す
 

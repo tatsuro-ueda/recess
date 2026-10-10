@@ -24,9 +24,11 @@
              display-only なカスタムトークン `$recess`。TTL 付きなので常駐が落ちたら自然に消える）。
              idle と reading は herdr から見ると同じ idle で、画面では見分けられないため
              （ユーザー報告 2026-09-28）。
-             **サイドバーの行に `$recess` を置かないと何も出ない。** 設定例は docs/install.md。
-             エージェント名（display_agent）を上書きしないのは、`agent` トークンを色で塗ると
-             claude / codex まで塗られてしまい、印だけ赤くできないため（ユーザー判断 2026-10-10）。
+             サイドバーの行に `$recess` を置いていれば、そのトークンで出す。置いていなければ
+             エージェント名（display_agent）を差し替えて出す。既定の行構成でも必ず出る側へ
+             倒すので、設定を触らなくても印は見える。設定例は docs/install.md。
+             `$recess` を置くと、その1語だけ色を変えられる。`agent` トークンを塗ると
+             claude / codex まで塗られてしまうため（ユーザー判断 2026-10-10）。
              状態の文字（state_label）を使わないのは、サイドバーの行に state_text を入れていないと
              どこにも出ないため（2026-09-29 実測。既定の行構成も state_icon だけ）。
   ジャンプ : Mac のペインが blocked / done になったら herdr agent focus で自動ジャンプ
@@ -79,7 +81,8 @@
   RECESS_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
   RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
   RECESS_READING_LABEL           読み中のペインに出す文言（既定 "to be read"。空にすると出さない）
-  RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess" → 行には $recess と書く）
+  RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess"）。サイドバーの行に
+                                 $recess があればこれで出し、無ければ display_agent で出す
   RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
 
 状態は毎回の差分（前回→今回）で見る。
@@ -271,6 +274,26 @@ ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「
 
 READING_LABEL = os.environ.get("RECESS_READING_LABEL", "to be read")   # 読み中の印。空で出さない
 READING_TOKEN = os.environ.get("RECESS_READING_TOKEN", "recess")       # サイドバーの行に $<この名前> で置く
+HERDR_CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config")),
+                            "herdr", "config.toml")
+
+
+def reading_uses_token():
+    """読み中の印を、カスタムトークンで出すか、エージェント名の差し替えで出すか。
+
+    サイドバーの行に `$<トークン名>` を置いている人にはトークンで書く。独立した
+    トークンなので、その1語だけ色を変えられる（`agent` を塗ると claude / codex まで塗られる）。
+    置いていない人には display_agent でエージェント名を差し替える。既定の行構成には
+    `agent` があるので、設定を触っていなくても必ず画面に出る。
+    herdr に実効設定を読む API が無いので、設定ファイルの文字列を見るだけにしている
+    （TOML は解析しない）。読めなければ「必ず出るほう」へ倒す。印が黙って消えるのが
+    いちばん悪いため（ユーザー判断 2026-10-10「それはだめでしょ」）。
+    """
+    try:
+        with open(HERDR_CONFIG, encoding="utf-8") as f:
+            return f"${READING_TOKEN}" in f.read()
+    except OSError:
+        return False
 READING_TTL = max(POLL * 6, 15.0)   # 秒。貼り直しの間隔より長くし、常駐が落ちたら TTL 切れで消える
 
 
@@ -424,6 +447,10 @@ class Watcher:
         その1語だけ色を変えられる（ユーザー判断 2026-10-10「赤字にして」）。"""
         if not READING_LABEL:
             return
+        use_token = reading_uses_token()
+        if use_token != getattr(self, "_label_via_token", None):
+            log(f"LABEL via {'$' + READING_TOKEN if use_token else 'display_agent'}")
+            self._label_via_token = use_token
         # 読んでいる人は1人しかいない。印を出すのは「見ている端末で、いま開いているペイン」だけ。
         # reading 集合そのものは複数持つ（同じタブの相方や他マシンぶんも判定に使う）が、
         # 画面に3つ同時に出ると、どれを読んでいるのか分からなくなる（ユーザー報告 2026-09-29）。
@@ -433,7 +460,10 @@ class Watcher:
             self.labeled.pop(key, None)
             if DRY_RUN:
                 continue
-            rc, _, err = self.report_metadata(key, ["--source", "recess", "--clear-token", READING_TOKEN])
+            # 両方消す。設定を書き換えて方式が変わった直後でも、前の印が残らない
+            rc, _, err = self.report_metadata(key, ["--source", "recess",
+                                                    "--clear-token", READING_TOKEN,
+                                                    "--clear-display-agent"])
             # 消せなくても TTL で消えるので、記録だけ残して先へ進む
             log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
         at = time.monotonic()
@@ -443,8 +473,10 @@ class Watcher:
             if DRY_RUN:
                 self.labeled[key] = at
                 continue
-            rc, _, err = self.report_metadata(key, [
-                "--source", "recess", "--token", f"{READING_TOKEN}={READING_LABEL}",
+            mark = (["--token", f"{READING_TOKEN}={READING_LABEL}", "--clear-display-agent"]
+                    if use_token else
+                    ["--display-agent", READING_LABEL, "--clear-token", READING_TOKEN])
+            rc, _, err = self.report_metadata(key, ["--source", "recess"] + mark + [
                 "--ttl-ms", str(int(READING_TTL * 1000))])
             if rc == 0:
                 if key not in self.labeled:

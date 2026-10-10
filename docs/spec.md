@@ -42,7 +42,8 @@ stateDiagram-v2
         blocked and done are checked on every machine; reading only in the tab you are looking at.
         The reading pane you are looking at shows `to be read` next to its agent name,
         because herdr reports reading as plain idle and nothing on screen tells the two apart.
-        It is a custom pane token, so your sidebar needs `$recess` in a row (see install.md).
+        By default it replaces the agent name. Put `$recess` in a sidebar row and Recess writes a
+        custom pane token instead, which you can colour on its own (see install.md).
         Only one pane ever carries it: the focused pane on the machine you are at. There is one of you.
     end note
 
@@ -133,7 +134,7 @@ herdr plays a sound when an agent finishes or asks. `--with-afplay` installs `~/
 
 ## Known weaknesses
 
-- The reading mark needs `herdr pane report-metadata` (herdr 0.9.1) **and `$recess` in one of your sidebar rows**; the default rows do not have it, so out of the box nothing shows. Two earlier tries were dropped: `--state-label` stayed invisible (the default rows carry `state_icon`, not `state_text`), and `--display-agent` worked but overwrites the `agent` token, so colouring the mark would also colour every agent name.
+- The reading mark needs `herdr pane report-metadata` (herdr 0.9.1) and a sidebar row carrying either `agent` (the default does) or `$recess`. Which one Recess writes is decided by looking for `$recess` in `config.toml` as text; it does not parse the TOML, and an unreadable file falls back to the always-visible `agent` route. `--state-label` was tried first and stayed invisible: the default rows carry `state_icon`, not `state_text`.
 - Space is a toggle. Pause or play by hand and the next press goes the wrong way. Recess never reads playback state; keep the video paused while you are at the terminal.
 - Tried with Safari and Netflix only. Other sites or players may not bind space to play/pause, or may not have the video focused.
 - "Browser is frontmost" does not mean "right tab, video focused". If a text field or another tab has focus, space goes there.
@@ -194,7 +195,8 @@ stateDiagram-v2
         blocked と done は全マシン、reading は見ているタブだけを見る。
         いま見ている reading のペインは、サイドバーのエージェント名の隣に `to be read` が出る。
         herdr から見ると reading は idle そのもので、画面では見分けられないため。
-        カスタムトークンなので、サイドバーの行に `$recess` を置く必要がある（install.md 参照）。
+        既定ではエージェント名を差し替える。サイドバーの行に `$recess` を置くと、
+        単独で色を変えられるカスタムトークンで書くほうへ切り替わる（install.md 参照）。
         印が付くのは常に1つだけ（見ている端末の、開いているペイン）。読む人は1人しかいない。
     end note
 
@@ -285,7 +287,7 @@ herdr はエージェントが終わったときと質問したときに音を�
 
 ## 分かっている弱点
 
-- 読み中の印は `herdr pane report-metadata`（herdr 0.9.1）と、**サイドバーの行に `$recess` を置くこと**に頼っている。既定の行構成には無いので、入れただけでは何も出ない。先に試して捨てた案は2つ。`--state-label` は画面に出なかった（既定の行が `state_icon` だけで `state_text` を持たない）。`--display-agent` は出たが `agent` トークンの値を上書きする仕組みなので、印を色で塗るとエージェント名まで塗られてしまう。
+- 読み中の印は `herdr pane report-metadata`（herdr 0.9.1）と、サイドバーの行に `agent`（既定にある）か `$recess` のどちらかがあることに頼っている。どちらで書くかは `config.toml` に `$recess` という文字列があるかで決める。TOML は解析しないし、読めなければ必ず出る `agent` 側へ倒す。最初に試した `--state-label` は画面に出なかった（既定の行が `state_icon` だけで `state_text` を持たない）。
 - スペースは切り替えです。手で止めたり再生したりすると、次の1回が逆に効きます。Recess は再生状態を読みません。ターミナルにいる間は動画を止めておいてください。
 - 確かめたのは Safari と Netflix だけ。他のサイトやプレーヤーではスペースが再生／停止に割り当てられていなかったり、動画にフォーカスが無かったりします。
 - 「ブラウザが最前面」は「正しいタブで動画にフォーカスがある」と同じではありません。文字入力欄や別のタブにフォーカスがあれば、スペースはそこへ行きます。
