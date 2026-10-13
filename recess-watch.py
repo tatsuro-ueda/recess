@@ -362,10 +362,13 @@ def video_play(reason):
 
 
 def video_pause_and_return(reason):
-    """ブラウザを見ているときだけ、スペースを送ってからターミナルを前に出す。ターミナルを見ているなら何もしない。"""
+    """動画を見ているときだけ、スペースを送ってから帰り先を前に出す。それ以外は理由を残して何もしない。"""
     app = front_app()
-    if app in TERMINAL_APPS:
-        log(f"RETURN {reason}: already on terminal ({app}) -> no toggle")
+    if app not in BROWSER_APPS:
+        # 以前は「ターミナル以外＝ブラウザ」と決めつけていたので、VS Code・Zoom・ロック画面でも
+        # 画面を奪っていた（2026-10-03 のログで Code 7件・zoom.us 4件・loginwindow 81件）。
+        # 動画が動いているのはブラウザだけなので、それを見ている人にだけ返す（ユーザー判断 2026-10-13）。
+        log(f"RETURN {reason}: skipped: you are in {app}, not watching a video")
         return
     log(f"RETURN {reason} from {app}")
     if DRY_RUN:

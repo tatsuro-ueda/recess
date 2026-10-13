@@ -1,12 +1,15 @@
 ---
 status: latest
 dateCreated: 2026-10-04
-dateModified: 2026-10-04
+dateModified: 2026-10-13
 ---
 
 # 開発チェックリスト（Recess）
 
-`docs/` の3文書（`.tasknote-paths.yml` で framework_rule を外した）から生成した派生物。正本は docs 側。docs を直したら `make-development-checklist` を呼び直す。
+`.tasknote-paths.yml` の `docs_root: docs` と `llm_wiki_update_docs` から生成した派生物。正本は docs 側。docs を直したら `make-development-checklist` を呼び直す。
+
+**章の割り当て**：0章＝共通の物差し（`ux-policy.md`）／A章＝`architecture.md`／B章＝`repository-structure.md`／D章＝`ux-policy.md`。
+**C章（`framework-rule.md`）は無い。** `disabled_defaults` で外し、枠組みの決めごとは `architecture.md` が持つ（2026-10-04）。
 
 **使い方**：章ごとに1回だけ「この章は対象か」を判断する。項目ごとに対象かどうかを考えない。
 例：画面を動かす数値にも通知にもログにも触らない変更なら、0章とD章は「章ごと対象外（理由）」で通してよい。
@@ -32,6 +35,8 @@ dateModified: 2026-10-04
 - [ ] **実測**：`watch.log` の行頭を集計し、タグが一覧どおりで、画面が動いた記録が背景に埋もれていないことを目で確認した（根拠：docs/ux-policy.md 記録の作法3・docs/functional-design.md 記録）
 
 ## A章: 設計判断（17件）
+
+`framework-rule.md` を廃したぶん、依存・プロセス・確かめ方もこの章が持つ。
 
 - [ ] キーを送るのは `Recess.app` だけで、python3 に許可を出していない（根拠：docs/architecture.md 権限をアプリ1つに閉じ込める）
 - [ ] 常駐が使う Mac 側の道具は権限不要のものだけ（`open` `lsappinfo` `caffeinate` `ioreg` `who`）（根拠：docs/architecture.md 権限をアプリ1つに閉じ込める）
@@ -59,7 +64,6 @@ dateModified: 2026-10-04
 - [ ] 状態と記録はすべて `~/.local/state/recess/` の下にあり、repo に置いていない（根拠：docs/repository-structure.md 決めごと）
 - [ ] 同じ判定が2か所に現れていない（関数へ出して1か所から呼んでいる）（根拠：docs/repository-structure.md 決めごと）
 - [ ] 各ファイルが責務分担表の「持たないもの」を持っていない（根拠：docs/repository-structure.md 責務分担）
-
 
 ## D章: 画面を動かす作法（11件）
 
