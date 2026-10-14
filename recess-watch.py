@@ -616,15 +616,18 @@ class Watcher:
         # 見ていない端末の reading が残り続けてしまう（2026-10-14）。
         afp = focus.get(self.active)
         self.read_done -= self.reading          # 読み直し始めたものは read ではない
+        gone = set()
         for ep, fp in focus.items():
-            if fp and fp not in self.reading:   # 移った先の状態は問わない（working のペインへ移っても読み終わり）
-                gone = {k for k in self.reading if k.startswith(ep + "/")}
-                self.reading -= gone
-                # 離れた時点で idle のままなら「読み終わった」。working へ移ったものは次の仕事なので入れない
-                self.read_done |= {k for k in gone if now.get(k) == "idle"}
-        self.reading = {k for k in self.reading if now.get(k) == "idle"}
-        # read は時間では消さない。そのペインが働き出した（idle でなくなった）時点で消える
-        self.read_done = {k for k in self.read_done if now.get(k) == "idle"}
+            if fp and fp not in self.reading:   # その端末で別のペインへ移った
+                gone |= {k for k in self.reading if k.startswith(ep + "/")}
+        gone |= {k for k in self.reading if now.get(k) != "idle"}   # そのペインが動き出した
+        self.reading -= gone
+        # 一度読んだ印は working のあいだも残す（ユーザー判断 2026-10-14。AIが動くペインは
+        # 「読み終わる」と「次の仕事が始まる」がほぼ同時で、working で消すと read が見えない）。
+        # done / blocked は「新しい未読ができた」ので read にしない／残さない。
+        NEW_ERRAND = ("done", "blocked")
+        self.read_done |= {k for k in gone if now.get(k) not in NEW_ERRAND}
+        self.read_done = {k for k in self.read_done if now.get(k) not in NEW_ERRAND}
         self.sync_reading_labels(focus.get(self.active))
 
         changed = (now != self.prev) or (focus != self.prev_focus)

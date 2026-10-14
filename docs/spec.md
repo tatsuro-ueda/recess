@@ -46,8 +46,9 @@ stateDiagram-v2
         By default it replaces the agent name. Put `$recess` in a sidebar row and Recess writes a
         custom pane token instead, which you can colour on its own (see install.md).
         Only one pane ever carries `reading`: the focused pane on the machine you are at. There is one
-        of you. A pane you have finished reading carries `read` instead, on every such pane, until it
-        starts working again (2026-10-14). Both share one token, so they share one colour.
+        of you. A pane you have finished reading carries `read` instead, on every such pane. It stays
+        through `working` and clears when the pane goes `done` or `blocked`, i.e. when there is
+        something new to read (2026-10-14). Both share one token, so they share one colour.
     end note
 
     note right of bg
@@ -203,8 +204,8 @@ stateDiagram-v2
         既定ではエージェント名を差し替える。サイドバーの行に `$recess` を置くと、
         単独で色を変えられるカスタムトークンで書くほうへ切り替わる（install.md 参照）。
         `reading` が付くのは常に1つだけ（見ている端末の、開いているペイン）。読む人は1人しかいない。
-        読み終わって離れたペインには `read` が付き、そのペインが働き出すまで残る（2026-10-14）。
-        同じトークンに入るので色は同じ。
+        読み終わって離れたペインには `read` が付く。`working` のあいだも残り、`done` か
+        `blocked`（新しい未読ができた）で消える（2026-10-14）。同じトークンに入るので色は同じ。
     end note
 
     note right of bg
