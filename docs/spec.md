@@ -20,7 +20,7 @@ stateDiagram-v2
         nf --> term : you come back on your own (Recess does nothing)
     }
 
-    state "foreground (human needed: a blocked or done pane anywhere, or a reading pane in the tab you are looking at)" as fg {
+    state "foreground (human needed: a blocked, done or reading pane on any machine)" as fg {
         state "blocked (question or approval)" as blocked
         state "done (finished, not yet seen)" as done
         state "reading (finished in front of you, or a done pane you just opened)" as reading
@@ -39,7 +39,8 @@ stateDiagram-v2
         A blocked or done pane on this Mac: focus it after 3 s hands-off (not when an SSH login is present).
         Panes on other machines are never focused (the local herdr does not hold them).
         Any one of blocked / done / reading keeps you in foreground.
-        blocked and done are checked on every machine; reading only in the tab you are looking at.
+        blocked, done and reading are all checked on every machine (reading was limited to the tab
+        you were looking at until 2026-10-14; picking the wrong machine then dragged you away mid-read).
         The reading pane you are looking at shows `to be read` next to its agent name,
         because herdr reports reading as plain idle and nothing on screen tells the two apart.
         By default it replaces the agent name. Put `$recess` in a sidebar row and Recess writes a
@@ -173,7 +174,7 @@ stateDiagram-v2
         nf --> term : 自分でターミナルへ戻る（Recess は何もしない）
     }
 
-    state "foreground（人の手が要る。blocked か done がどこかにある、または見ているタブに reading がある）" as fg {
+    state "foreground（人の手が要る。blocked・done・reading のどれかがどこかにある）" as fg {
         state "blocked（質問・承認待ち）" as blocked
         state "done（終わったが未読）" as done
         state "reading（目の前で終わった、または done を開いた直後）" as reading
@@ -192,7 +193,8 @@ stateDiagram-v2
         この Mac の blocked / done ペインは、手を離して3秒以上でそのペインへ移る（SSH ログイン中は移らない）。
         他マシンのペインへは移らない（ローカルの herdr がそのペインを持っていない）。
         blocked・done・reading のどれか1つでも残っていれば foreground。
-        blocked と done は全マシン、reading は見ているタブだけを見る。
+        blocked・done・reading はすべて全マシンを見る（reading だけは 2026-10-14 まで
+        「見ているタブだけ」で、見ている端末を選び間違えると読んでいる最中に連れ出された）。
         いま見ている reading のペインは、サイドバーのエージェント名の隣に `to be read` が出る。
         herdr から見ると reading は idle そのもので、画面では見分けられないため。
         既定ではエージェント名を差し替える。サイドバーの行に `$recess` を置くと、

@@ -600,10 +600,13 @@ class Watcher:
             for k in in_view(ep):
                 if now.get(k) == "idle" and self.prev.get(k) in ("done", "working"):
                     self.reading.add(k)
-        # reading の終了: 見ている端末で別の idle ペインへ移った / reading ペインが idle でなくなった
+        # reading の終了: 各端末で、その端末のフォーカスが reading でないペインへ移った / reading ペインが idle でなくなった
+        # 端末ごとに独立して消す。active 端末だけを特別扱いしていたので、判定を全マシンへ広げると
+        # 見ていない端末の reading が残り続けてしまう（2026-10-14）。
         afp = focus.get(self.active)
-        if afp and afp not in self.reading:   # 移った先の状態は問わない（working のペインへ移っても読み終わり）
-            self.reading = {k for k in self.reading if not k.startswith(self.active + "/")}
+        for ep, fp in focus.items():
+            if fp and fp not in self.reading:   # 移った先の状態は問わない（working のペインへ移っても読み終わり）
+                self.reading = {k for k in self.reading if not k.startswith(ep + "/")}
         self.reading = {k for k in self.reading if now.get(k) == "idle"}
         self.sync_reading_labels(focus.get(self.active))
 
@@ -656,7 +659,9 @@ class Watcher:
         # 同じタブに読み中のペインがあるなら、隣のペインが working でも行かない。
         view = in_view(self.active)
         view_working = [k for k in view if now.get(k) == "working"]
-        view_reading = [k for k in view if k in self.reading]
+        # 読み中はどの端末のものでも効かせる。見ているタブだけに絞っていたので、active の選び間違いで
+        # 連れ出されていた（2026-10-14 に Mac で読んでいる最中に4回。ユーザー判断で非対称を廃止）。
+        any_reading = sorted(self.reading)
         app = front_app()
         if app in TERMINAL_APPS:
             LAST_TERMINAL["name"] = TERMINAL_OPEN_NAMES.get(app, app)
@@ -666,7 +671,7 @@ class Watcher:
         # foreground = 人の手が要る（blocked / done がどこかにある、または見ているタブに reading がある）
         # background = idle と working だけ。ブラウザへ行くのは foreground → background へ移った瞬間だけ
         # （2026-09-26 変更。background の中で状態が変わっても、それだけでは行かない）
-        fg_now = bool(attention) or bool(view_reading)
+        fg_now = bool(attention) or bool(any_reading)
         if self.fg_prev is None:
             self.fg_prev = fg_now            # 起動直後は遷移とみなさない
         if self.fg_prev and not fg_now:
@@ -684,7 +689,7 @@ class Watcher:
         # 実際に行けるのは、どこかに working があるときだけ（見ているタブに限らない。ユーザー判断 2026-09-26）。
         # 全部 idle なら待つ相手がいないので行かない。無ければ印を残したまま待つ
         any_working = any(v == "working" for v in now.values())
-        want_off = (not attention) and afp is not None and any_working and not view_reading
+        want_off = (not attention) and afp is not None and any_working and not any_reading
 
         if self.pending_off and want_off and self.enabled:
             idle = hid_idle()
