@@ -45,7 +45,9 @@ stateDiagram-v2
         because herdr reports reading as plain idle and nothing on screen tells the two apart.
         By default it replaces the agent name. Put `$recess` in a sidebar row and Recess writes a
         custom pane token instead, which you can colour on its own (see install.md).
-        Only one pane ever carries it: the focused pane on the machine you are at. There is one of you.
+        Only one pane ever carries `reading`: the focused pane on the machine you are at. There is one
+        of you. A pane you have finished reading carries `read` instead, on every such pane, until it
+        starts working again (2026-10-14). Both share one token, so they share one colour.
     end note
 
     note right of bg
@@ -79,6 +81,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Recess has seen you on a terminal. |
 | `RECESS_ANNOUNCE_SECONDS` | `5` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
 | `RECESS_READING_LABEL` | `reading` | What a reading pane shows in the sidebar. Empty = show nothing. |
+| `RECESS_READ_LABEL` | `read` | What a pane you finished reading shows. Empty = show nothing. |
 | `RECESS_READING_TOKEN` | `recess` | The custom pane token that carries it. Put `$<name>` in a sidebar row to see it. |
 | `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing, switch nothing and change no label. |
 
@@ -199,7 +202,9 @@ stateDiagram-v2
         herdr から見ると reading は idle そのもので、画面では見分けられないため。
         既定ではエージェント名を差し替える。サイドバーの行に `$recess` を置くと、
         単独で色を変えられるカスタムトークンで書くほうへ切り替わる（install.md 参照）。
-        印が付くのは常に1つだけ（見ている端末の、開いているペイン）。読む人は1人しかいない。
+        `reading` が付くのは常に1つだけ（見ている端末の、開いているペイン）。読む人は1人しかいない。
+        読み終わって離れたペインには `read` が付き、そのペインが働き出すまで残る（2026-10-14）。
+        同じトークンに入るので色は同じ。
     end note
 
     note right of bg
@@ -233,6 +238,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
 | `RECESS_ANNOUNCE_SECONDS` | `5` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
 | `RECESS_READING_LABEL` | `reading` | 読み中のペインがサイドバーに出す文言。空にすると出さない。 |
+| `RECESS_READ_LABEL` | `read` | 読み終わって離れたペインが出す文言。空にすると出さない。 |
 | `RECESS_READING_TOKEN` | `recess` | その文言を入れるカスタムトークン名。サイドバーの行に `$<名前>` を置くと見える。 |
 | `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず、何も切り替えず、表示も差し替えない。 |
 

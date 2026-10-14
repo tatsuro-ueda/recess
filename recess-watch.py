@@ -20,7 +20,7 @@
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
              見ている端末で別のペインへ移ったら終わる。
              画面に印を出すのは、そのうち「いま開いているペイン」1つだけ（読む人は1人）。
-             読み中のあいだは、サイドバーに「reading」と出す（herdr pane report-metadata の
+             読み中のあいだは「reading」、読み終わって離れたら「read」と出す（herdr pane report-metadata の
              display-only なカスタムトークン `$recess`。TTL 付きなので常駐が落ちたら自然に消える）。
              idle と reading は herdr から見ると同じ idle で、画面では見分けられないため
              （ユーザー報告 2026-09-28）。
@@ -81,6 +81,7 @@
   RECESS_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
   RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
   RECESS_READING_LABEL           読み中のペインに出す文言（既定 "reading"。空にすると出さない）
+  RECESS_READ_LABEL              読み終わったペインに出す文言（既定 "read"。空にすると出さない）
   RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess"）。サイドバーの行に
                                  $recess があればこれで出し、無ければ display_agent で出す
   RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
@@ -273,6 +274,7 @@ ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを
 ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
 
 READING_LABEL = os.environ.get("RECESS_READING_LABEL", "reading")   # 読み中の印。空で出さない
+READ_LABEL = os.environ.get("RECESS_READ_LABEL", "read")            # 読み終わったペインの印。空で出さない
 READING_TOKEN = os.environ.get("RECESS_READING_TOKEN", "recess")       # サイドバーの行に $<この名前> で置く
 HERDR_CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config")),
                             "herdr", "config.toml")
@@ -393,14 +395,15 @@ class Watcher:
     def __init__(self):
         self.prev = {}          # key -> status
         self.prev_focus = {}    # endpoint -> key or None
-        self.reading = set()    # keys
+        self.reading = set()    # keys（いま読んでいる）
+        self.read_done = set()  # keys（読み終わって離れた。そのペインが働き出したら消す）
         self.active = "local"   # 最後にフォーカスが動いた端末
         self.pending_off = False
         self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
         self.titles = {}        # key -> ペイン名。取れなかった端末のぶんは前回の名前を残す
         self.tab_of = {}             # key -> "endpoint/tab_id"（同じタブの2ペインは一体で判断する）
         self.fg_prev = None          # 前回 foreground だったか（None は起動直後）
-        self.labeled = {}       # key -> 最後に state_label を貼った時刻（monotonic）
+        self.labeled = {}       # key -> (最後に印を貼った時刻（monotonic）, そのときの文言)
         self.targets = {}       # endpoint -> ssh の接続先（local は持たない）
         self.remote_cache = {}  # label -> (agents, time)
         self.remote_down = set()
@@ -442,22 +445,28 @@ class Watcher:
         return ssh_herdr(target, " ".join(["herdr"] + [shlex.quote(a) for a in argv]))
 
     def sync_reading_labels(self, focused_key):
-        """読み中のペインだけ、サイドバーにカスタムトークンで印を出す。
+        """読み中のペインに `reading`、読み終わったペインに `read` の印を出す。
         idle と reading は herdr から見ると同じなので、ここだけが画面上の見分け方になる。
         state_label ではないのは、行構成に state_text が無いと出ないため（2026-09-29 実測）。
         display_agent でもないのは、それが `agent` トークンの値を上書きする仕組みで、
         色を付けると claude / codex まで同じ色になるため。カスタムトークンなら
-        その1語だけ色を変えられる（ユーザー判断 2026-10-10「赤字にして」）。"""
-        if not READING_LABEL:
+        その1語だけ色を変えられる（ユーザー判断 2026-10-10「赤字にして」）。
+        reading と read は同じトークンに入るので色は同じ赤になる（2026-10-14）。"""
+        if not READING_LABEL and not READ_LABEL:
             return
         use_token = reading_uses_token()
         if use_token != getattr(self, "_label_via_token", None):
             log(f"LABEL via {'$' + READING_TOKEN if use_token else 'display_agent'}")
             self._label_via_token = use_token
-        # 読んでいる人は1人しかいない。印を出すのは「見ている端末で、いま開いているペイン」だけ。
-        # reading 集合そのものは複数持つ（同じタブの相方や他マシンぶんも判定に使う）が、
-        # 画面に3つ同時に出ると、どれを読んでいるのか分からなくなる（ユーザー報告 2026-09-29）。
-        wanted = {focused_key} if focused_key in self.reading else set()
+        # reading は1つだけ。読んでいる人は1人なので「見ている端末で、いま開いているペイン」に限る
+        # （3つ同時に出ると、どれを読んでいるのか分からない。ユーザー報告 2026-09-29）。
+        # read は読み終わったペインぜんぶに出す（ユーザー判断 2026-10-14）。
+        wanted = {}
+        if READING_LABEL and focused_key in self.reading:
+            wanted[focused_key] = READING_LABEL
+        if READ_LABEL:
+            for key in self.read_done:
+                wanted.setdefault(key, READ_LABEL)
         # 消すほうを先にやる。付けてから消すと、その1秒だけ2つ出る（2026-09-30 にログで9回確認）
         for key in [k for k in self.labeled if k not in wanted]:
             self.labeled.pop(key, None)
@@ -470,21 +479,22 @@ class Watcher:
             # 消せなくても TTL で消えるので、記録だけ残して先へ進む
             log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
         at = time.monotonic()
-        for key in sorted(wanted):
-            if at - self.labeled.get(key, -1e9) < READING_TTL / 3:
-                continue   # まだ有効。貼り直しは TTL の 1/3 ごと
+        for key, label in sorted(wanted.items()):
+            prev_at, prev_label = self.labeled.get(key, (-1e9, None))
+            if label == prev_label and at - prev_at < READING_TTL / 3:
+                continue   # 同じ文言でまだ有効。貼り直しは TTL の 1/3 ごと
             if DRY_RUN:
-                self.labeled[key] = at
+                self.labeled[key] = (at, label)
                 continue
-            mark = (["--token", f"{READING_TOKEN}={READING_LABEL}", "--clear-display-agent"]
+            mark = (["--token", f"{READING_TOKEN}={label}", "--clear-display-agent"]
                     if use_token else
-                    ["--display-agent", READING_LABEL, "--clear-token", READING_TOKEN])
+                    ["--display-agent", label, "--clear-token", READING_TOKEN])
             rc, _, err = self.report_metadata(key, ["--source", "recess"] + mark + [
                 "--ttl-ms", str(int(READING_TTL * 1000))])
             if rc == 0:
-                if key not in self.labeled:
-                    log(f"LABEL {key} -> {READING_LABEL!r}")
-                self.labeled[key] = at
+                if label != prev_label:   # 文言が変わったときだけ記録する（貼り直しは書かない）
+                    log(f"LABEL {key} -> {label!r}")
+                self.labeled[key] = (at, label)
             else:
                 log(f"LABEL {key} failed: {err.strip()[:120]}")
 
@@ -493,7 +503,8 @@ class Watcher:
 
         tick が決めた値をそのまま並べる。status 側に判定を書くと、常駐の本当の判断と
         ずれて嘘をつくため（ユーザー判断 2026-10-06）。
-        ペイン単位で連れ出しを妨げるのは blocked/done と「見ているタブの読み中」の2つだけ。
+        ペイン単位で連れ出しを妨げるのは blocked/done と読み中の2つだけ。読み中は
+        2026-10-14 から全マシンを見る（見ているタブに限らない）。
         """
         view_set = set(view)
         panes = []
@@ -502,8 +513,8 @@ class Watcher:
             reading = key in self.reading
             if status in ("blocked", "done"):
                 blocking = "呼び出しが残っている"
-            elif reading and key in view_set:
-                blocking = "見ているタブで読み中"
+            elif reading:
+                blocking = "読み中"   # 2026-10-14 から端末をまたいで効く
             else:
                 blocking = None            # working は待つ相手として必要。idle も妨げない
             panes.append({"key": key, "title": self.titles.get(key, ""), "status": status,
@@ -604,10 +615,16 @@ class Watcher:
         # 端末ごとに独立して消す。active 端末だけを特別扱いしていたので、判定を全マシンへ広げると
         # 見ていない端末の reading が残り続けてしまう（2026-10-14）。
         afp = focus.get(self.active)
+        self.read_done -= self.reading          # 読み直し始めたものは read ではない
         for ep, fp in focus.items():
             if fp and fp not in self.reading:   # 移った先の状態は問わない（working のペインへ移っても読み終わり）
-                self.reading = {k for k in self.reading if not k.startswith(ep + "/")}
+                gone = {k for k in self.reading if k.startswith(ep + "/")}
+                self.reading -= gone
+                # 離れた時点で idle のままなら「読み終わった」。working へ移ったものは次の仕事なので入れない
+                self.read_done |= {k for k in gone if now.get(k) == "idle"}
         self.reading = {k for k in self.reading if now.get(k) == "idle"}
+        # read は時間では消さない。そのペインが働き出した（idle でなくなった）時点で消える
+        self.read_done = {k for k in self.read_done if now.get(k) == "idle"}
         self.sync_reading_labels(focus.get(self.active))
 
         changed = (now != self.prev) or (focus != self.prev_focus)
