@@ -83,6 +83,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_ANNOUNCE_SECONDS` | `5` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
 | `RECESS_READING_LABEL` | `reading` | What a reading pane shows in the sidebar. Empty = show nothing. |
 | `RECESS_READ_LABEL` | `read` | What a pane you finished reading shows. Empty = show nothing. |
+| `RECESS_TO_BE_READ_LABEL` | `to be read` | What a `done` or `blocked` pane shows. Empty = show nothing. |
+| `RECESS_REMOTE_HERDR` | `$HOME/.local/bin/herdr` | Where to find herdr on other machines when it is not on their PATH. |
 | `RECESS_READING_TOKEN` | `recess` | The custom pane token that carries it. Put `$<name>` in a sidebar row to see it. |
 | `RECESS_DRY_RUN` | (unset) | `1` = write the decisions to the log but press nothing, switch nothing and change no label. |
 
@@ -240,6 +242,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_ANNOUNCE_SECONDS` | `5` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
 | `RECESS_READING_LABEL` | `reading` | 読み中のペインがサイドバーに出す文言。空にすると出さない。 |
 | `RECESS_READ_LABEL` | `read` | 読み終わって離れたペインが出す文言。空にすると出さない。 |
+| `RECESS_TO_BE_READ_LABEL` | `to be read` | `done` / `blocked` のペインが出す文言。空にすると出さない。 |
+| `RECESS_REMOTE_HERDR` | `$HOME/.local/bin/herdr` | 他マシンで herdr が PATH に無いときの場所。 |
 | `RECESS_READING_TOKEN` | `recess` | その文言を入れるカスタムトークン名。サイドバーの行に `$<名前>` を置くと見える。 |
 | `RECESS_DRY_RUN` | （未設定） | `1` で、判断はログに書くが何も押さず、何も切り替えず、表示も差し替えない。 |
 
@@ -305,7 +309,7 @@ herdr はエージェントが終わったときと質問したときに音を�
 - ターミナルでもブラウザでもないアプリ（Finder やエディタ）を見ているときに呼び戻されると、それでもブラウザを前に出してスペースを押します。
 - 見ているタブの AI が `working` なら、手を離して考えごとをしている最中でも動画へ連れて行かれることがあります。
 - 応答しなくなった他のマシンは、最後に分かった状態を持ち続けます。いなくなった扱いにはしません。
-- 他のマシンでは `herdr agent list` を非対話シェルで実行します。相手の PATH に `~/.local/bin` が無いと、黙って unreachable 扱いになり、この Mac だけの監視になります。気づける手がかりはログの `remote <名前>: unreachable` だけです。
+- 他のマシンでは `herdr agent list` を非対話シェルで実行します。PATH に無ければ `$HOME/.local/bin/herdr` へ落とすので、2026-10-14 以降は PATH だけが理由で unreachable になることはありません（それ以前は8台中4台が黙って見えていませんでした）。それでも届かない相手はログの `remote <名前>: unreachable` で分かります。
 - `enabled` のマシンが落ちている間は、1周が落ちているマシン1台につき最大5秒（ssh の接続待ち）延びます。
 - 手を離した秒数はこの Mac の入力装置から取ります。スマホから ssh で打っていても「手」には数えません。自動ジャンプは `who` でそれを見ますが、動画への切り替えは見ません。
 - ssh が遅いと、他のマシンからの呼び出しは次の `herdr agent list` が返るまで遅れます。

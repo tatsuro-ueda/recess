@@ -71,6 +71,8 @@
 
 環境変数（すべて任意。数値が壊れていたら既定へ戻し、起動は止めない）
   RECESS_HERDR_BIN               herdr の場所（既定: PATH から探す → ~/.local/bin/herdr）
+  RECESS_REMOTE_HERDR            他マシンでの herdr の場所（既定 "$HOME/.local/bin/herdr"）。
+                                相手の PATH に無いときのフォールバックに使う
   RECESS_POLL_SECONDS            状態を集める間隔（既定 2）
   RECESS_HANDS_OFF_SECONDS       「手を離した」とみなす秒数（既定 3）
   RECESS_RETURN_COOLDOWN_SECONDS 呼び戻し後にブラウザへ行かない秒数（既定 0。行き来が気になるときだけ 5 など）
@@ -82,6 +84,8 @@
   RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
   RECESS_READING_LABEL           読み中のペインに出す文言（既定 "reading"。空にすると出さない）
   RECESS_READ_LABEL              読み終わったペインに出す文言（既定 "read"。空にすると出さない）
+  RECESS_READING_NOW_TOKEN       reading を入れるトークン名（既定 "recess_now"）。設定に無ければ recess へ落とす
+  RECESS_READ_TOKEN              read を入れるトークン名（既定 "recess_done"）。設定に無ければ recess へ落とす
   RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess"）。サイドバーの行に
                                  $recess があればこれで出し、無ければ display_agent で出す
   RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
@@ -186,6 +190,18 @@ def machines():
     return result
 
 
+REMOTE_HERDR = os.environ.get("RECESS_REMOTE_HERDR", "$HOME/.local/bin/herdr")
+
+
+def remote_herdr_cmd(argv_str):
+    """他マシンで herdr を呼ぶコマンド文字列。PATH にあればそれを、無ければ絶対パスを使う。
+
+    非対話シェルの PATH に ~/.local/bin が無い相手では、名前だけで呼ぶと command not found に
+    なり、黙って unreachable 扱いになっていた（2026-10-14 に4台で実測。ssh 自体は通っていた）。
+    """
+    return f'command -v herdr >/dev/null 2>&1 && herdr {argv_str} || {REMOTE_HERDR} {argv_str}'
+
+
 def ssh_herdr(target, remote_cmd):
     """他マシンの herdr を叩く。状態収集と表示の差し替えで同じ経路（多重化した ssh）を使う。"""
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ControlMaster=auto", "-o", f"ControlPath={SSH_CTL}",
@@ -195,7 +211,7 @@ def ssh_herdr(target, remote_cmd):
 
 
 def remote_agents(target):
-    rc, out, _ = ssh_herdr(target, "herdr agent list")
+    rc, out, _ = ssh_herdr(target, remote_herdr_cmd("agent list"))
     return parse_agents(out) if rc == 0 else None
 
 
@@ -246,6 +262,17 @@ def video_app():
     return VIDEO_APP_FIXED or LAST_OTHER_APP["name"]
 
 
+def token_for(label):
+    """印の文言に対応するトークン名。設定に置かれていなければ READING_TOKEN へ落とす。"""
+    wanted = {READING_LABEL: READING_NOW_TOKEN, READ_LABEL: READ_TOKEN}.get(label)
+    if not wanted:
+        return READING_TOKEN              # to be read は従来どおり $recess
+    try:
+        return wanted if f"${wanted}" in _herdr_config_text() else READING_TOKEN
+    except OSError:
+        return READING_TOKEN
+
+
 SPACE_APP = os.path.join(HOME, "Applications", "Recess.app")
 LAST_TERMINAL = {"name": os.environ.get("RECESS_DEFAULT_TERMINAL", "iTerm")}   # open -a に渡す名前。プロセス名 iTerm2 → アプリ名 iTerm
 TERMINAL_OPEN_NAMES = {"iTerm2": "iTerm"}
@@ -275,9 +302,27 @@ ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「
 
 READING_LABEL = os.environ.get("RECESS_READING_LABEL", "reading")   # 読み中の印。空で出さない
 READ_LABEL = os.environ.get("RECESS_READ_LABEL", "read")            # 読み終わったペインの印。空で出さない
+TO_BE_READ_LABEL = os.environ.get("RECESS_TO_BE_READ_LABEL", "to be read")   # done（未読）の印。空で出さない
 READING_TOKEN = os.environ.get("RECESS_READING_TOKEN", "recess")       # サイドバーの行に $<この名前> で置く
+# 印は意味ごとに色を変えたいが、1つのトークンに入れると全部同じ色になる。意味ごとに
+# トークンを分け、設定に無いものは READING_TOKEN へ落とす（既存の設定のままでも印は消えない）。
+#   to be read … 次に読む候補。目立つべき（赤・太字）
+#   reading    … いま見ている場所。自分で分かっているので目立たなくてよい（通常色）
+#   read       … 用は済んだ。探せば読める程度でよい（補助色）
+READING_NOW_TOKEN = os.environ.get("RECESS_READING_NOW_TOKEN", "recess_now")
+READ_TOKEN = os.environ.get("RECESS_READ_TOKEN", "recess_done")
 HERDR_CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config")),
                             "herdr", "config.toml")
+
+
+def _herdr_config_text():
+    """herdr の設定からコメント行を除いた本文。
+
+    `#` で始まる行を落とすのは、コメントアウトした設定を「有効」と誤認しないため
+    （2026-10-14。保留にした案をコメントで残したら、そのトークンを使い続けて印が消えた）。
+    """
+    with open(HERDR_CONFIG, encoding="utf-8") as f:
+        return "\n".join(line for line in f if not line.lstrip().startswith("#"))
 
 
 def reading_uses_token():
@@ -292,8 +337,7 @@ def reading_uses_token():
     いちばん悪いため（ユーザー判断 2026-10-10「それはだめでしょ」）。
     """
     try:
-        with open(HERDR_CONFIG, encoding="utf-8") as f:
-            return f"${READING_TOKEN}" in f.read()
+        return f"${READING_TOKEN}" in _herdr_config_text()
     except OSError:
         return False
 READING_TTL = max(POLL * 6, 15.0)   # 秒。貼り直しの間隔より長くし、常駐が落ちたら TTL 切れで消える
@@ -442,9 +486,9 @@ class Watcher:
         target = self.targets.get(ep)
         if not target:
             return -1, "", f"no ssh target for {ep}"
-        return ssh_herdr(target, " ".join(["herdr"] + [shlex.quote(a) for a in argv]))
+        return ssh_herdr(target, remote_herdr_cmd(" ".join(shlex.quote(a) for a in argv)))
 
-    def sync_reading_labels(self, focused_key):
+    def sync_reading_labels(self, focused_key, statuses):
         """読み中のペインに `reading`、読み終わったペインに `read` の印を出す。
         idle と reading は herdr から見ると同じなので、ここだけが画面上の見分け方になる。
         state_label ではないのは、行構成に state_text が無いと出ないため（2026-09-29 実測）。
@@ -452,30 +496,43 @@ class Watcher:
         色を付けると claude / codex まで同じ色になるため。カスタムトークンなら
         その1語だけ色を変えられる（ユーザー判断 2026-10-10「赤字にして」）。
         reading と read は同じトークンに入るので色は同じ赤になる（2026-10-14）。"""
-        if not READING_LABEL and not READ_LABEL:
+        if not (READING_LABEL or READ_LABEL or TO_BE_READ_LABEL):
             return
         use_token = reading_uses_token()
         if use_token != getattr(self, "_label_via_token", None):
             log(f"LABEL via {'$' + READING_TOKEN if use_token else 'display_agent'}")
             self._label_via_token = use_token
-        # reading は1つだけ。読んでいる人は1人なので「見ている端末で、いま開いているペイン」に限る
-        # （3つ同時に出ると、どれを読んでいるのか分からない。ユーザー報告 2026-09-29）。
-        # read は読み終わったペインぜんぶに出す（ユーザー判断 2026-10-14）。
+        # 印は3つだけ（ユーザー判断 2026-10-14「read, reading, to be read だけ表示されていれば ok」）。
+        #   done            -> to be read（まだ読んでいない）
+        #   idle かつ見ている -> reading（いま読んでいる。人は1人なので常に1つ）
+        #   idle かつ見ていない -> read（もう読み終わっている）
+        #   blocked         -> to be read（質問待ちも「読んで答える」ので未読と同じ）
+        #   working         -> 読んだ記録があるあいだは read を残す。無ければ印なし
         wanted = {}
-        if READING_LABEL and focused_key in self.reading:
-            wanted[focused_key] = READING_LABEL
-        if READ_LABEL:
-            for key in self.read_done:
-                wanted.setdefault(key, READ_LABEL)
+        for key, status in statuses.items():
+            if key.split("/", 1)[0] in self.remote_down:
+                continue       # 応答しない端末へ ssh を投げ続けない
+            if status in ("done", "blocked"):
+                label = TO_BE_READ_LABEL   # blocked も「人が読んで答える」ので未読と同じ扱い
+            elif status == "working":
+                label = READ_LABEL if key in self.read_done else None
+            elif key == focused_key:
+                label = READING_LABEL
+            else:
+                label = READ_LABEL
+            if label:
+                wanted[key] = label
         # 消すほうを先にやる。付けてから消すと、その1秒だけ2つ出る（2026-09-30 にログで9回確認）
         for key in [k for k in self.labeled if k not in wanted]:
             self.labeled.pop(key, None)
             if DRY_RUN:
                 continue
             # 両方消す。設定を書き換えて方式が変わった直後でも、前の印が残らない
-            rc, _, err = self.report_metadata(key, ["--source", "recess",
-                                                    "--clear-token", READING_TOKEN,
-                                                    "--clear-display-agent"])
+            clears = []
+            for tok in {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN}:
+                clears += ["--clear-token", tok]
+            rc, _, err = self.report_metadata(key, ["--source", "recess"] + clears
+                                              + ["--clear-display-agent"])
             # 消せなくても TTL で消えるので、記録だけ残して先へ進む
             log(f"LABEL {key} cleared" if rc == 0 else f"LABEL {key} clear failed: {err.strip()[:120]}")
         at = time.monotonic()
@@ -486,9 +543,15 @@ class Watcher:
             if DRY_RUN:
                 self.labeled[key] = (at, label)
                 continue
-            mark = (["--token", f"{READING_TOKEN}={label}", "--clear-display-agent"]
-                    if use_token else
-                    ["--display-agent", label, "--clear-token", READING_TOKEN])
+            if use_token:
+                tok = token_for(label)
+                mark = ["--token", f"{tok}={label}", "--clear-display-agent"]
+                for other in {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN} - {tok}:
+                    mark += ["--clear-token", other]   # 意味が変わったとき前の色が残らない
+            else:
+                mark = ["--display-agent", label]
+                for tok in {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN}:
+                    mark += ["--clear-token", tok]
             rc, _, err = self.report_metadata(key, ["--source", "recess"] + mark + [
                 "--ttl-ms", str(int(READING_TTL * 1000))])
             if rc == 0:
@@ -628,7 +691,7 @@ class Watcher:
         NEW_ERRAND = ("done", "blocked")
         self.read_done |= {k for k in gone if now.get(k) not in NEW_ERRAND}
         self.read_done = {k for k in self.read_done if now.get(k) not in NEW_ERRAND}
-        self.sync_reading_labels(focus.get(self.active))
+        self.sync_reading_labels(focus.get(self.active), now)
 
         changed = (now != self.prev) or (focus != self.prev_focus)
         attention = [k for k, s in now.items() if s in ("blocked", "done")]
