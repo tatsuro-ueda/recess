@@ -20,7 +20,7 @@
   reading  : 見ているタブのペインが done/working→idle になったら読み中。
              見ている端末で別のペインへ移ったら終わる。
              画面に印を出すのは、そのうち「いま開いているペイン」1つだけ（読む人は1人）。
-             読み中のあいだは、サイドバーに「to be read」と出す（herdr pane report-metadata の
+             読み中のあいだは、サイドバーに「reading」と出す（herdr pane report-metadata の
              display-only なカスタムトークン `$recess`。TTL 付きなので常駐が落ちたら自然に消える）。
              idle と reading は herdr から見ると同じ idle で、画面では見分けられないため
              （ユーザー報告 2026-09-28）。
@@ -80,7 +80,7 @@
                                 （既定 "Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge"）
   RECESS_VIDEO_APP               動画を見るアプリを決め打ちしたいときだけ（例 Safari）
   RECESS_DEFAULT_TERMINAL        まだターミナルを見ていないうちに呼ばれたとき open -a に渡す名前（既定 iTerm）
-  RECESS_READING_LABEL           読み中のペインに出す文言（既定 "to be read"。空にすると出さない）
+  RECESS_READING_LABEL           読み中のペインに出す文言（既定 "reading"。空にすると出さない）
   RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess"）。サイドバーの行に
                                  $recess があればこれで出し、無ければ display_agent で出す
   RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
@@ -272,7 +272,7 @@ def is_ignored(agent, patterns):
 ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「Moving to ◯◯」の通知を止める
 ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
 
-READING_LABEL = os.environ.get("RECESS_READING_LABEL", "to be read")   # 読み中の印。空で出さない
+READING_LABEL = os.environ.get("RECESS_READING_LABEL", "reading")   # 読み中の印。空で出さない
 READING_TOKEN = os.environ.get("RECESS_READING_TOKEN", "recess")       # サイドバーの行に $<この名前> で置く
 HERDR_CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config")),
                             "herdr", "config.toml")
@@ -657,8 +657,6 @@ class Watcher:
         # idle（読み中でなくても）は「次を打つ準備」なので行かない
         # （呼び戻された直後に2〜3回ブラウザへ戻されるのは、idle で行く分岐が原因だった）。
         # 同じタブに読み中のペインがあるなら、隣のペインが working でも行かない。
-        view = in_view(self.active)
-        view_working = [k for k in view if now.get(k) == "working"]
         # 読み中はどの端末のものでも効かせる。見ているタブだけに絞っていたので、active の選び間違いで
         # 連れ出されていた（2026-10-14 に Mac で読んでいる最中に4回。ユーザー判断で非対称を廃止）。
         any_reading = sorted(self.reading)

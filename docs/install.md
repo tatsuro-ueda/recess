@@ -47,7 +47,7 @@ Recess starts right away, but it cannot press space until you do the next sectio
 
 ## Optional: colour the reading mark
 
-Recess marks the pane you are reading with `to be read`. Out of the box it shows that in place of the agent name, so you see it without touching any config.
+Recess marks the pane you are reading with `reading`. Out of the box it shows that in place of the agent name, so you see it without touching any config.
 
 If you want the mark in its own colour, add `$recess` to a sidebar row in `~/.config/herdr/config.toml`. Recess notices the row and switches to writing a custom pane token instead, which can be styled on its own:
 
@@ -163,7 +163,7 @@ Recess はすぐ動き始めますが、次の節をやるまでスペースは�
 
 ## 読み中の印をサイドバーに出す
 
-Recess は、いま読んでいるペインに `to be read` と出します。**既定ではエージェント名の代わりに出す**ので、設定を触らなくても見えます。
+Recess は、いま読んでいるペインに `reading` と出します。**既定ではエージェント名の代わりに出す**ので、設定を触らなくても見えます。
 
 印に色を付けたいときだけ、`~/.config/herdr/config.toml` のサイドバー行に `$recess` を足してください。recess はその行を見つけると、カスタムトークンで書く方式へ切り替えます。トークンは単独で色を変えられます。
 
