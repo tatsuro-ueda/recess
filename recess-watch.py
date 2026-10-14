@@ -657,6 +657,7 @@ class Watcher:
         # idle（読み中でなくても）は「次を打つ準備」なので行かない
         # （呼び戻された直後に2〜3回ブラウザへ戻されるのは、idle で行く分岐が原因だった）。
         # 同じタブに読み中のペインがあるなら、隣のペインが working でも行かない。
+        view = in_view(self.active)   # recess status の「いま見ているタブ」表示に使う（write_status へ渡す）
         # 読み中はどの端末のものでも効かせる。見ているタブだけに絞っていたので、active の選び間違いで
         # 連れ出されていた（2026-10-14 に Mac で読んでいる最中に4回。ユーザー判断で非対称を廃止）。
         any_reading = sorted(self.reading)
