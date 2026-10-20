@@ -1,6 +1,6 @@
-# Recess
+# Recess — a herdr plugin
 
-AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls.
+A [herdr](https://herdr.dev) plugin. AI works, you take recess. Your video plays by itself while the agents work, and pauses to bring you back to the terminal when herdr calls.
 
 ![Recess. AI agents are useful, but why do they leave me so strangely exhausted? Brain Fry.](docs/manga-en-1.jpg)
 
@@ -27,7 +27,7 @@ Feel Physics / Tatsuro Ueda — [feel-physics.jp](https://feel-physics.jp/). MIT
 
 # Recess（日本語）
 
-AI が働く間は休み時間。動画は勝手に再生され、herdr に呼ばれたら止まってターミナルへ戻る。
+[herdr](https://herdr.dev) のプラグイン。AI が働く間は休み時間。動画は勝手に再生され、herdr に呼ばれたら止まってターミナルへ戻る。
 
 ![Recess 漫画。「AIを使え」って言うけど、もう頭がパンクしそう。脳が油揚げになっちゃう？ AI疲れの新常識「Brain Fry」](docs/manga-ja-1.jpg)
 

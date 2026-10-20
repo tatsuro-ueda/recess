@@ -2,7 +2,7 @@ id = "recess"
 name = "Recess"
 version = "0.2.0"
 min_herdr_version = "0.9.0"
-description = "AI agent works, you watch. ON/OFF を herdr のアクションで切り替える（常駐は launchd）"
+description = "A herdr plugin. AI works, you take recess: your video plays while the agents work, and pauses when herdr calls you back. ON/OFF are herdr actions (the resident part is launchd)."
 platforms = ["macos"]
 
 [[actions]]
