@@ -86,6 +86,9 @@
   RECESS_READ_LABEL              読み終わったペインに出す文言（既定 "read"。空にすると出さない）
   RECESS_READING_NOW_TOKEN       reading を入れるトークン名（既定 "recess_now"）。設定に無ければ recess へ落とす
   RECESS_READ_TOKEN              read を入れるトークン名（既定 "recess_done"）。設定に無ければ recess へ落とす
+  RECESS_WORKING_LABEL           作業中のペインに出す文言（既定 "working"。空にすると出さない）
+  RECESS_WORKING_TOKEN           working を入れるトークン名（既定 "recess_working"）。設定に無ければ出さない
+                                 （$recess へ落とすと作業中の行が全部 to be read と同じ赤になるため）
   RECESS_READING_TOKEN           その文言を入れるカスタムトークン名（既定 "recess"）。サイドバーの行に
                                  $recess があればこれで出し、無ければ display_agent で出す
   RECESS_DRY_RUN=1               判定だけ行い、open / caffeinate / focus / state_label を実行しない
@@ -264,7 +267,8 @@ def video_app():
 
 def token_for(label):
     """印の文言に対応するトークン名。設定に置かれていなければ READING_TOKEN へ落とす。"""
-    wanted = {READING_LABEL: READING_NOW_TOKEN, READ_LABEL: READ_TOKEN}.get(label)
+    wanted = {READING_LABEL: READING_NOW_TOKEN, READ_LABEL: READ_TOKEN,
+              WORKING_LABEL: WORKING_TOKEN}.get(label)
     if not wanted:
         return READING_TOKEN              # to be read は従来どおり $recess
     try:
@@ -311,6 +315,11 @@ READING_TOKEN = os.environ.get("RECESS_READING_TOKEN", "recess")       # サイ�
 #   read       … 用は済んだ。探せば読める程度でよい（補助色）
 READING_NOW_TOKEN = os.environ.get("RECESS_READING_NOW_TOKEN", "recess_now")
 READ_TOKEN = os.environ.get("RECESS_READ_TOKEN", "recess_done")
+# working は4つ目の印（2026-10-22 ユーザー指定「作業中は黄色で working に」）。他の3つと違い、
+# 設定にトークンが無ければ出さない。$recess へ落とすと作業中の行まで赤くなり、赤の意味が壊れる。
+WORKING_LABEL = os.environ.get("RECESS_WORKING_LABEL", "working")
+WORKING_TOKEN = os.environ.get("RECESS_WORKING_TOKEN", "recess_working")
+ALL_TOKENS = {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN, WORKING_TOKEN}
 HERDR_CONFIG = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.join(HOME, ".config")),
                             "herdr", "config.toml")
 
@@ -496,9 +505,13 @@ class Watcher:
         色を付けると claude / codex まで同じ色になるため。カスタムトークンなら
         その1語だけ色を変えられる（ユーザー判断 2026-10-10「赤字にして」）。
         reading と read は同じトークンに入るので色は同じ赤になる（2026-10-14）。"""
-        if not (READING_LABEL or READ_LABEL or TO_BE_READ_LABEL):
+        if not (READING_LABEL or READ_LABEL or TO_BE_READ_LABEL or WORKING_LABEL):
             return
         use_token = reading_uses_token()
+        try:   # working はトークンで出せるときだけ（display_agent で出すと claude / codex が消える）
+            show_working = bool(WORKING_LABEL) and use_token and f"${WORKING_TOKEN}" in _herdr_config_text()
+        except OSError:
+            show_working = False
         if use_token != getattr(self, "_label_via_token", None):
             log(f"LABEL via {'$' + READING_TOKEN if use_token else 'display_agent'}")
             self._label_via_token = use_token
@@ -507,7 +520,8 @@ class Watcher:
         #   idle かつ見ている -> reading（いま読んでいる。人は1人なので常に1つ）
         #   idle かつ見ていない -> read（もう読み終わっている）
         #   blocked         -> to be read（質問待ちも「読んで答える」ので未読と同じ）
-        #   working         -> 読んだ記録があるあいだは read を残す。無ければ印なし
+        #   working         -> working（黄。設定に $recess_working があるとき・2026-10-22 追加）
+        #                      無ければ従来どおり、読んだ記録があるあいだは read を残す
         wanted = {}
         for key, status in statuses.items():
             if key.split("/", 1)[0] in self.remote_down:
@@ -515,7 +529,10 @@ class Watcher:
             if status in ("done", "blocked"):
                 label = TO_BE_READ_LABEL   # blocked も「人が読んで答える」ので未読と同じ扱い
             elif status == "working":
-                label = READ_LABEL if key in self.read_done else None
+                if show_working:
+                    label = WORKING_LABEL
+                else:
+                    label = READ_LABEL if key in self.read_done else None
             elif key == focused_key:
                 label = READING_LABEL
             else:
@@ -529,7 +546,7 @@ class Watcher:
                 continue
             # 両方消す。設定を書き換えて方式が変わった直後でも、前の印が残らない
             clears = []
-            for tok in {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN}:
+            for tok in ALL_TOKENS:
                 clears += ["--clear-token", tok]
             rc, _, err = self.report_metadata(key, ["--source", "recess"] + clears
                                               + ["--clear-display-agent"])
@@ -546,11 +563,11 @@ class Watcher:
             if use_token:
                 tok = token_for(label)
                 mark = ["--token", f"{tok}={label}", "--clear-display-agent"]
-                for other in {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN} - {tok}:
+                for other in ALL_TOKENS - {tok}:
                     mark += ["--clear-token", other]   # 意味が変わったとき前の色が残らない
             else:
                 mark = ["--display-agent", label]
-                for tok in {READING_TOKEN, READING_NOW_TOKEN, READ_TOKEN}:
+                for tok in ALL_TOKENS:
                     mark += ["--clear-token", tok]
             rc, _, err = self.report_metadata(key, ["--source", "recess"] + mark + [
                 "--ttl-ms", str(int(READING_TTL * 1000))])
