@@ -193,6 +193,35 @@ def machines():
     return result
 
 
+SELECTION_FILE = os.path.join(HOME, ".local", "state", "herdr", "client", "endpoint-selection.json")
+_profile_labels = {}
+
+
+def selected_endpoint():
+    """herdr の画面がいま選んでいる台（"local" か machine のラベル）。読めなければ None。
+
+    herdr のクライアントは、台を選ぶたびに selected_profile（machine の ID。Mac なら null）を
+    このファイルへ書く。フォーカスの動きから推すと、Mac のフォーカスが動かないまま台を戻ったとき
+    に拾えない（2026-10-22。EMG から Mac のペインへ戻っても active=EMG のままで、見ている
+    ペインに to be read が付いた）。公開 API ではないので、読めないときは従来の推定へ戻る。
+    """
+    try:
+        with open(SELECTION_FILE, encoding="utf-8") as f:
+            profile = json.load(f).get("selected_profile")
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not profile:
+        return "local"
+    if profile not in _profile_labels:
+        rc, out, _ = run([HERDR, "machine", "list"], timeout=5)
+        if rc == 0:
+            for line in out.splitlines():
+                cols = line.split("\t")
+                if len(cols) >= 2:
+                    _profile_labels[cols[0].strip()] = cols[1].strip()
+    return _profile_labels.get(profile)
+
+
 REMOTE_HERDR = os.environ.get("RECESS_REMOTE_HERDR", "$HOME/.local/bin/herdr")
 
 
@@ -450,6 +479,7 @@ class Watcher:
         self.prev_focus = {}    # endpoint -> key or None
         self.reading = set()    # keys（いま読んでいる）
         self.read_done = set()  # keys（読み終わって離れた。そのペインが働き出したら消す）
+        self.unread = set()     # keys（見ていないうちに working/done → idle になった。開くまで to be read）
         self.active = "local"   # 最後にフォーカスが動いた端末
         self.pending_off = False
         self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
@@ -518,6 +548,7 @@ class Watcher:
         # 印は3つだけ（ユーザー判断 2026-10-14「read, reading, to be read だけ表示されていれば ok」）。
         #   done            -> to be read（まだ読んでいない）
         #   idle かつ見ている -> reading（いま読んでいる。人は1人なので常に1つ）
+        #   idle かつ未読    -> to be read（見ていないうちに終わった。2026-10-22 追加）
         #   idle かつ見ていない -> read（もう読み終わっている）
         #   blocked         -> to be read（質問待ちも「読んで答える」ので未読と同じ）
         #   working         -> working（黄。設定に $recess_working があるとき・2026-10-22 追加）
@@ -535,6 +566,8 @@ class Watcher:
                     label = READ_LABEL if key in self.read_done else None
             elif key == focused_key:
                 label = READING_LABEL
+            elif key in self.unread:
+                label = TO_BE_READ_LABEL   # 見ていないうちに idle になった＝まだ読んでいない
             else:
                 label = READ_LABEL
             if label:
@@ -675,6 +708,9 @@ class Watcher:
         for ep in focus:
             if ep in self.prev_focus and focus[ep] != self.prev_focus[ep]:
                 self.active = ep
+        sel = selected_endpoint()   # 分かるならこちらが正本（フォーカスの動きは推定にすぎない）
+        if sel in focus:
+            self.active = sel
         if self.active not in focus:
             self.active = "local"
 
@@ -694,6 +730,17 @@ class Watcher:
         # reading の終了: 各端末で、その端末のフォーカスが reading でないペインへ移った / reading ペインが idle でなくなった
         # 端末ごとに独立して消す。active 端末だけを特別扱いしていたので、判定を全マシンへ広げると
         # 見ていない端末の reading が残り続けてしまう（2026-10-14）。
+        # 未読: 見ていないうちに終わったペイン（2026-10-22 ユーザー指摘「done が自動的に read になってない？」）。
+        # herdr はそのサーバーで focused なペインが終わると done を飛ばして idle にする。衛星は
+        # たいてい1枚きりのペインを focused と思っているので、終わるたびに idle になり（SP は53回中52回）、
+        # 下の判定では「idle で見ていない」= read になっていた。人が実際に見ているのは active な端末の
+        # タブだけなので、それ以外で idle になったものは、開くまで to be read にする。
+        looking = set(in_view(self.active))
+        for k, s in now.items():
+            if s == "idle" and self.prev.get(k) in ("done", "working") and k not in looking:
+                self.unread.add(k)
+        self.unread -= {k for k in looking if now.get(k) == "idle"}   # 開いたら未読ではない
+        self.unread &= set(now)
         afp = focus.get(self.active)
         self.read_done -= self.reading          # 読み直し始めたものは read ではない
         gone = set()
@@ -708,6 +755,7 @@ class Watcher:
         NEW_ERRAND = ("done", "blocked")
         self.read_done |= {k for k in gone if now.get(k) not in NEW_ERRAND}
         self.read_done = {k for k in self.read_done if now.get(k) not in NEW_ERRAND}
+        self.read_done -= self.unread           # 読んでいないものは read ではない
         self.sync_reading_labels(focus.get(self.active), now)
 
         changed = (now != self.prev) or (focus != self.prev_focus)
