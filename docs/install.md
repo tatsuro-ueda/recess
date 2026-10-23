@@ -45,21 +45,25 @@ Running `install.sh` again without options is safe. It keeps Recess.app, puts `r
 
 Recess starts right away, but it cannot press space until you do the next section.
 
-## Optional: colour the reading mark
+## Optional: colour the marks
 
-Recess marks the pane you are reading with `reading`. Out of the box it shows that in place of the agent name, so you see it without touching any config.
+Recess puts one of four marks next to each agent: `to be read` (it is asking, or it finished while you were not looking), `working`, `reading` (the pane you are looking at) and `read`. Out of the box they show in place of the agent name, so you see them without touching any config — all except `working`, which appears only once its own token is in a row (below).
 
-If you want the mark in its own colour, add `$recess` to a sidebar row in `~/.config/herdr/config.toml`. Recess notices the row and switches to writing a custom pane token instead, which can be styled on its own:
+If you want the marks in their own colours, add the tokens to a sidebar row in `~/.config/herdr/config.toml`. Recess notices `$recess` and switches to writing custom pane tokens, which can be styled on their own:
 
 ```toml
 [ui.sidebar.agents]
 rows = [
   ["state_icon", "machine", "workspace", "tab"],
-  ["agent", { token = "$recess", fg = "#ff5555", bold = true }],
+  ["agent",
+   { token = "$recess", fg = "#ff5555", bold = true },  # to be read
+   { token = "$recess_now" },                            # reading
+   { token = "$recess_done", fg = "#5fa873" },           # read
+   { token = "$recess_working", fg = "#e5c07b" }],       # working
 ]
 ```
 
-Then `herdr server reload-config`. Only this one word takes the colour, so your agent names stay as they were — colouring the `agent` token instead would paint every `claude` and `codex`. Take the row out again and Recess falls back to replacing the agent name, so the mark never silently disappears.
+Then restart herdr: it reads `rows` only when it starts (`herdr server reload-config` reports success but does not redraw the rows). Only these words take the colour, so your agent names stay as they were — colouring the `agent` token instead would paint every `claude` and `codex`. A mark whose own token is missing falls back to `$recess`; take `$recess` out too and Recess goes back to replacing the agent name, so the marks never silently disappear.
 
 ## Give the permissions to Recess.app, and to nothing else
 
@@ -161,21 +165,25 @@ curl -fsSLO https://raw.githubusercontent.com/tatsuro-ueda/recess/main/install.s
 
 Recess はすぐ動き始めますが、次の節をやるまでスペースは押せません。
 
-## 読み中の印をサイドバーに出す
+## 印をサイドバーに出す
 
-Recess は、いま読んでいるペインに `reading` と出します。**既定ではエージェント名の代わりに出す**ので、設定を触らなくても見えます。
+Recess は、各エージェントの隣に4つの印のどれかを出します。`to be read`（質問している、または見ていないうちに終わった）、`working`、`reading`（いま見ているペイン）、`read` です。**既定ではエージェント名の代わりに出す**ので、設定を触らなくても見えます。ただし `working` だけは、下のトークンを行に置いたときにしか出ません。
 
-印に色を付けたいときだけ、`~/.config/herdr/config.toml` のサイドバー行に `$recess` を足してください。recess はその行を見つけると、カスタムトークンで書く方式へ切り替えます。トークンは単独で色を変えられます。
+印に色を付けたいときは、`~/.config/herdr/config.toml` のサイドバー行にトークンを足してください。recess は `$recess` を見つけると、カスタムトークンで書く方式へ切り替えます。トークンは単独で色を変えられます。
 
 ```toml
 [ui.sidebar.agents]
 rows = [
   ["state_icon", "machine", "workspace", "tab"],
-  ["agent", { token = "$recess", fg = "#ff5555", bold = true }],
+  ["agent",
+   { token = "$recess", fg = "#ff5555", bold = true },  # to be read
+   { token = "$recess_now" },                            # reading
+   { token = "$recess_done", fg = "#5fa873" },           # read
+   { token = "$recess_working", fg = "#e5c07b" }],       # working
 ]
 ```
 
-そのあと `herdr server reload-config`。色が付くのはこの1語だけなので、エージェント名はそのままです（`agent` トークンを塗ると `claude` や `codex` まで塗られます）。行を外せば、recess はエージェント名を差し替える方式へ戻ります。**印が黙って消えることはありません。**
+そのあと herdr を立て直してください。herdr は `rows` を起動したときにしか読みません（`herdr server reload-config` は成功と返しますが、行は描き直されません）。色が付くのはこれらの語だけなので、エージェント名はそのままです（`agent` トークンを塗ると `claude` や `codex` まで塗られます）。自分のトークンが無い印は `$recess` へ落ちます。`$recess` も外せば、recess はエージェント名を差し替える方式へ戻ります。**印が黙って消えることはありません。**
 
 ## 許可を Recess.app にだけ出す
 
