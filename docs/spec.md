@@ -17,6 +17,7 @@ Recess reads only what herdr reports for each pane, so it does not know what kin
 | `idle`, anything else | read |
 
 - **Looking at it**: the terminal is frontmost, and the pane is the focused one on the machine the herdr client has selected (`~/.local/state/herdr/client/endpoint-selection.json`; when that file cannot be read, Recess guesses from where the focus last moved). Only that one pane is ever `reading` — there is one of you. Panes in the same tab are on screen too, so they count as seen.
+- **Finished reading** is not guessed (2026-10-23). While you look at an idle pane it stays `reading`, and Recess will not take you away. When you are done, go to the browser yourself. The trip on its own happens when you send the next prompt.
 - **Finished**: the pane went from `working`, `blocked` or `done` to `idle`. herdr skips `done` when a pane finishes while it is the focused one on its own machine, and a machine with a single pane always reports that pane as focused, so `done` alone cannot tell what you have not seen. Recess remembers "finished, not yet seen" itself. That is the only thing it remembers.
 - **A machine that stops answering** keeps its last state for 30 s, which still counts. After that it is left out of the table: its state is frozen, so it neither marks nor holds anything, and the marks it already carries fade with their TTL. If it comes back with a `to be read` still there, that counts as new and calls you back.
 - **How a mark is shown**: by default it replaces the agent name. Put `$recess` in a sidebar row and Recess writes custom pane tokens instead, which you can colour on their own (see install.md).
@@ -183,6 +184,7 @@ Recess が読むのは herdr が返すペインの状態だけなので、AI が
 | `idle` で、それ以外 | read |
 
 - **今見ている**：ターミナルが最前面にあり、herdr のクライアントが選んでいる台（`~/.local/state/herdr/client/endpoint-selection.json`。読めないときはフォーカスが最後に動いた台から推す）の、フォーカス中のペイン。`reading` が付くのはこの1つだけです。読む人は1人しかいません。同じタブのペインも画面に映っているので、見たことになります。
+- **読み終えたか**は当てにいきません（2026-10-23）。idle のペインを見ているあいだは `reading` のままで、連れ出しません。読み終えたら、自分でブラウザへ移ってください。自動で動画へ行くのは、次のプロンプトを送ったときです。
 - **終わった**：`working`・`blocked`・`done` から `idle` へ移ったとき。herdr は、そのサーバーでフォーカス中のペインが終わると `done` を飛ばして `idle` にします。ペインが1枚しかない台は、そのペインをいつもフォーカス中と報告するので、`done` だけでは「まだ見ていない」が分かりません。そこで Recess が「終わってから、まだ見ていない」を自分で覚えます。覚えるのはこれだけです。
 - **応答しなくなった台**は、30秒は前回の状態で判定に使います。それを過ぎたら表から外します。状態が凍っているので、印も付けず、連れ出しも止めません。すでに付いている印は TTL で自然に消えます。戻ったときに `to be read` が残っていれば、新しく出たものとして呼び戻します。
 - **印の出し方**：既定ではエージェント名を差し替えます。サイドバーの行に `$recess` を置くと、単独で色を変えられるカスタムトークンで書くほうへ切り替わります（install.md 参照）。
