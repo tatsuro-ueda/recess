@@ -722,11 +722,13 @@ class Watcher:
             tab = self.tab_of.get(fp)
             return [k for k in now if k.startswith(ep + "/") and self.tab_of.get(k) == tab] or [fp]
 
-        # reading の開始（どの端末でも、見ていたタブのペインが done/working → idle）
-        for ep in focus:
-            for k in in_view(ep):
-                if now.get(k) == "idle" and self.prev.get(k) in ("done", "working"):
-                    self.reading.add(k)
+        # reading の開始（いま見ている端末のタブのペインが done/working → idle）
+        # 見ている端末に限る（2026-10-23）。衛星の herdr は1枚きりのペインをいつも focused と
+        # 思っているので、全端末で数えると、見ていない SP のペインが「読み中」のまま残り、
+        # 連れ出しを止め続けた。見ている端末は selected_endpoint() で分かるようになった。
+        for k in in_view(self.active):
+            if now.get(k) == "idle" and self.prev.get(k) in ("done", "working"):
+                self.reading.add(k)
         # reading の終了: 各端末で、その端末のフォーカスが reading でないペインへ移った / reading ペインが idle でなくなった
         # 端末ごとに独立して消す。active 端末だけを特別扱いしていたので、判定を全マシンへ広げると
         # 見ていない端末の reading が残り続けてしまう（2026-10-14）。
@@ -748,6 +750,7 @@ class Watcher:
             if fp and fp not in self.reading:   # その端末で別のペインへ移った
                 gone |= {k for k in self.reading if k.startswith(ep + "/")}
         gone |= {k for k in self.reading if now.get(k) != "idle"}   # そのペインが動き出した
+        gone |= {k for k in self.reading if not k.startswith(self.active + "/")}   # 別の端末へ移った
         self.reading -= gone
         # 一度読んだ印は working のあいだも残す（ユーザー判断 2026-10-14。AIが動くペインは
         # 「読み終わる」と「次の仕事が始まる」がほぼ同時で、working で消すと read が見えない）。
