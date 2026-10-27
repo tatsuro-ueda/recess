@@ -18,7 +18,9 @@
                （~/.local/state/herdr/client/endpoint-selection.json）の、フォーカス中のペイン。
                同じタブのペインは画面に映っているので、見たことで未読が消える。
                各台の herdr が言う focused は、その台の中での話でしかない（衛星は1枚きりのペインを
-               いつも focused と言う）。選択ファイルが読めないときだけ、フォーカスの動きから推す。
+               いつも focused と言う）。選択ファイルの台 ID は、毎周その周の herdr machine list で名前に直す
+               （台の名前を変えても次の周から効く）。選択ファイルが読めないとき、またはその台がその周の一覧の
+               enabled に無いときは、フォーカスの動きから推す。
   覚えること : 「終わってから、まだ見ていないペイン」だけ（終わった＝ working・blocked・done から idle）。
                herdr はそのサーバーで focused なペインが終わると done を飛ばして idle にするので、
                done の代わりにここで覚える。
@@ -187,30 +189,42 @@ def local_agents():
     return parse_agents(out) if rc == 0 else None
 
 
+_profile_labels = {}   # machine の ID -> ラベル。machines() が毎周その周の一覧で入れ替え、selected_endpoint が引く
+
+
 def machines():
-    """herdr machine list の enabled な行 → [(label, target)]。接続先はここからだけ読む（決め打ちしない）。"""
+    """herdr machine list の enabled な行 → [(label, target)]。接続先はここからだけ読む（決め打ちしない）。
+
+    同じ一覧から ID→ラベルの対応も作り直す。ラベルは途中で変わるので、覚えたものを使い続けない
+    （2026-10-27。台の名前に絵文字を足したら、一度覚えた古いラベルと毎周の新しいラベルが食い違い、
+    リモートの台を開いても未読が消えなくなった）。読めなかった周は対応も空にする（その周はリモートの
+    台が表に無いので、引けなくても判定は変わらない）。
+    """
     rc, out, _ = run([HERDR, "machine", "list"], timeout=5)
+    _profile_labels.clear()
     result = []
     if rc != 0:
         return result
     for line in out.splitlines():
         cols = line.split("\t")
+        if len(cols) >= 2:
+            _profile_labels[cols[0].strip()] = cols[1].strip()
         if len(cols) >= 5 and cols[4].strip() == "enabled":
             result.append((cols[1].strip(), cols[2].strip()))
     return result
 
 
 SELECTION_FILE = os.path.join(HOME, ".local", "state", "herdr", "client", "endpoint-selection.json")
-_profile_labels = {}
 
 
 def selected_endpoint():
-    """herdr の画面がいま選んでいる台（"local" か machine のラベル）。読めなければ None。
+    """herdr の画面がいま選んでいる台（"local" か machine のラベル）。選択ファイルが読めないか、その周の一覧に無い台なら None。
 
     herdr のクライアントは、台を選ぶたびに selected_profile（machine の ID。Mac なら null）を
     このファイルへ書く。フォーカスの動きから推すと、Mac のフォーカスが動かないまま台を戻ったとき
     に拾えない（2026-10-22。EMG から Mac のペインへ戻っても active=EMG のままで、見ている
     ペインに to be read が付いた）。公開 API ではないので、読めないときは従来の推定へ戻る。
+    ラベルは、同じ周に machines() が読んだ一覧から引く（ここでは覚えない）。
     """
     try:
         with open(SELECTION_FILE, encoding="utf-8") as f:
@@ -219,13 +233,6 @@ def selected_endpoint():
         return None
     if not profile:
         return "local"
-    if profile not in _profile_labels:
-        rc, out, _ = run([HERDR, "machine", "list"], timeout=5)
-        if rc == 0:
-            for line in out.splitlines():
-                cols = line.split("\t")
-                if len(cols) >= 2:
-                    _profile_labels[cols[0].strip()] = cols[1].strip()
     return _profile_labels.get(profile)
 
 
@@ -498,7 +505,7 @@ class Watcher:
         self.prev_focus = {}    # endpoint -> key or None
         self.unread = set()     # keys（終わってから、まだ見ていない。覚えるのはこれだけ。決定⑪）
         self.prev_marks = {}    # key -> 前の周の印（呼び戻しは「to be read が新しく出た」だけを見る）
-        self.active = "local"   # 最後にフォーカスが動いた端末
+        self.active = "local"   # 見ている台。選択ファイルから引けた台が正本、引けなければ最後にフォーカスが動いた台
         self.pending_off = False
         self.last_return_at = -1e9   # 最後に呼び戻した時刻（monotonic）
         self.titles = {}        # key -> ペイン名。取れなかった端末のぶんは前回の名前を残す
