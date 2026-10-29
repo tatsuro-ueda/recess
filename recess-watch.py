@@ -341,7 +341,7 @@ def is_ignored(agent, patterns):
 
 
 ANNOUNCE_OFF = os.path.join(STATE_DIR, "announce-off")   # このファイルを作ると「Moving to ◯◯」の通知を止める
-ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "5"))   # 「Moving to ◯◯」を読む時間。0 で即移る
+ANNOUNCE_SECONDS = float(os.environ.get("RECESS_ANNOUNCE_SECONDS", "2"))   # 「Moving to ◯◯」を読む時間。0 で即移る
 
 READING_LABEL = os.environ.get("RECESS_READING_LABEL", "reading")   # 読み中の印。空で出さない
 READ_LABEL = os.environ.get("RECESS_READ_LABEL", "read")            # 読み終わったペインの印。空で出さない

@@ -83,7 +83,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | App names counted as "browser", comma-separated. Only these are remembered as the place to return the video to. |
 | `RECESS_VIDEO_APP` | (empty) | Force one browser, e.g. `Safari`. Empty = the browser you last used, Safari until then. |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | The app name passed to `open -a` when you are called back before Recess has seen you on a terminal. |
-| `RECESS_ANNOUNCE_SECONDS` | `5` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
+| `RECESS_ANNOUNCE_SECONDS` | `2` | How long `Moving to <app>` stays on screen before it switches. `0` = switch at once (no notification, no wait). |
 | `RECESS_READING_LABEL` | `reading` | What a reading pane shows in the sidebar. Empty = show nothing. |
 | `RECESS_READ_LABEL` | `read` | What a pane you finished reading shows. Empty = show nothing. |
 | `RECESS_TO_BE_READ_LABEL` | `to be read` | What a `done` or `blocked` pane, or one that finished while you were not looking, shows. Empty = show nothing. |
@@ -250,7 +250,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/jp.feel-physics.recess.p
 | `RECESS_BROWSER_APPS` | `Safari,Comet,Google Chrome,Firefox,Arc,Brave Browser,Microsoft Edge` | 「ブラウザ」とみなすアプリ名。カンマ区切り。動画の戻り先として覚えるのはこれらだけ。 |
 | `RECESS_VIDEO_APP` | （空） | ブラウザを決め打ちする（例 `Safari`）。空なら最後に使ったブラウザ、それまでは Safari。 |
 | `RECESS_DEFAULT_TERMINAL` | `iTerm` | まだターミナルを見ていないうちに呼び戻されたとき、`open -a` に渡すアプリ名。 |
-| `RECESS_ANNOUNCE_SECONDS` | `5` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
+| `RECESS_ANNOUNCE_SECONDS` | `2` | 移る前に `Moving to <アプリ>` を出して待つ秒数。`0` ですぐ移る（通知も待ちも無し）。 |
 | `RECESS_READING_LABEL` | `reading` | 読み中のペインがサイドバーに出す文言。空にすると出さない。 |
 | `RECESS_READ_LABEL` | `read` | 読み終わって離れたペインが出す文言。空にすると出さない。 |
 | `RECESS_TO_BE_READ_LABEL` | `to be read` | `done` / `blocked` のペインと、見ていないうちに終わったペインが出す文言。空にすると出さない。 |
